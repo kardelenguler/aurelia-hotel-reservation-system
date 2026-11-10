@@ -3,6 +3,11 @@ backend/local.properties
 
 # Derleme çıktıları
 backend/target/
+frontend/dist/
+frontend/.angular/
+
+# Bağımlılıklar (npm install ile tekrar kurulur)
+frontend/node_modules/
 
 # Editör ayarları
 .vscode/
