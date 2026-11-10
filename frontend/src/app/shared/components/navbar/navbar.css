@@ -1,0 +1,246 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(247, 244, 238, 0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: var(--navbar-height);
+}
+
+/* ---------- Logo ---------- */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-gold);
+  flex-shrink: 0;
+}
+
+.brand-logo {
+  width: 48px;
+  height: 32px;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+
+.brand-name {
+  font-family: var(--font-heading);
+  font-size: 1.35rem;
+  letter-spacing: 0.08em;
+  color: var(--color-charcoal);
+}
+
+.brand-sub {
+  font-family: var(--font-heading);
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  color: var(--color-charcoal);
+}
+
+.brand-stars {
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  color: var(--color-gold);
+  margin-top: 2px;
+}
+
+/* ---------- Linkler ---------- */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-links a {
+  position: relative;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-charcoal);
+  padding-block: 8px;
+  transition: color var(--transition);
+}
+
+.nav-links a:hover {
+  color: var(--color-gold-dark);
+}
+
+.nav-links a.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--color-gold);
+}
+
+.mobile-actions {
+  display: none;
+}
+
+/* ---------- Sağ taraf ---------- */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.icon-link,
+.user-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-charcoal);
+  transition: color var(--transition);
+}
+
+.icon-link:hover,
+.user-button:hover {
+  color: var(--color-gold-dark);
+}
+
+.icon-link svg,
+.user-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-button {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-btn);
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.user-button .chevron {
+  width: 16px;
+  height: 16px;
+  transition: transform var(--transition);
+}
+
+.user-button .chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 190px;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card-hover);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown a,
+.dropdown button {
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-charcoal);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.dropdown a:hover,
+.dropdown button:hover {
+  background: var(--color-ivory);
+}
+
+.menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--color-charcoal);
+}
+
+.menu-toggle svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* ---------- Mobil / Tablet ---------- */
+@media (max-width: 960px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+  }
+
+  .nav-panel {
+    display: none;
+    position: absolute;
+    top: var(--navbar-height);
+    left: 0;
+    right: 0;
+    background: var(--color-ivory);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+    padding: 16px 24px 24px;
+  }
+
+  .nav-panel.open {
+    display: block;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .nav-links a {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .nav-links a.active {
+    color: var(--color-gold-dark);
+  }
+
+  .nav-links a.active::after {
+    display: none;
+  }
+
+  .mobile-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .mobile-actions > a:not(.btn) {
+    font-weight: 500;
+    padding: 6px 0;
+  }
+}

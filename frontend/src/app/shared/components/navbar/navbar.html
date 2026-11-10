@@ -1,0 +1,119 @@
+<header class="navbar">
+  <div class="container navbar-inner">
+
+    <!-- Logo -->
+    <a routerLink="/" class="brand" (click)="closeAll()" aria-label="Aurelia Grand Resort ana sayfa">
+      <svg class="brand-logo" viewBox="0 0 48 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="M24 3c4.5 5.5 4.5 15 0 23c-4.5-8-4.5-17.5 0-23z" />
+        <path d="M24 26c-3-7.5-9-12.5-16.5-13.5c1 7.5 7.5 12.5 16.5 13.5z" />
+        <path d="M24 26c3-7.5 9-12.5 16.5-13.5c-1 7.5-7.5 12.5-16.5 13.5z" />
+        <path d="M24 26c-6-2.5-13.5-2.5-21 1c6.5 3.5 14 3.5 21-1z" />
+        <path d="M24 26c6-2.5 13.5-2.5 21 1c-6.5 3.5-14 3.5-21-1z" />
+      </svg>
+      <span class="brand-text">
+        <span class="brand-name">AURELIA</span>
+        <span class="brand-sub">GRAND RESORT</span>
+        <span class="brand-stars" aria-hidden="true">★★★★★</span>
+      </span>
+    </a>
+
+    <!-- Menü linkleri (masaüstünde yatay, mobilde açılır panel) -->
+    <nav class="nav-panel" [class.open]="mobileMenuOpen()" aria-label="Ana menü">
+      <div class="nav-links">
+        @for (link of links; track link.path) {
+          <a
+            [routerLink]="link.path"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: link.exact }"
+            (click)="closeAll()">
+            {{ link.label }}
+          </a>
+        }
+      </div>
+
+      <!-- Sadece mobil panelde görünen hesap işlemleri -->
+      <div class="mobile-actions">
+        @if (auth.isLoggedIn()) {
+          <a routerLink="/customer/reservations" (click)="closeAll()">Rezervasyonlarım</a>
+          <a routerLink="/customer/dashboard" (click)="closeAll()">Hesabım</a>
+          @if (auth.isAdmin()) {
+            <a routerLink="/admin/dashboard" (click)="closeAll()">Yönetim Paneli</a>
+          }
+          <button type="button" class="btn btn-outline btn-block" (click)="logout()">Çıkış Yap</button>
+        } @else {
+          <a routerLink="/login" class="btn btn-outline btn-block" (click)="closeAll()">Giriş Yap</a>
+          <a routerLink="/register" class="btn btn-gold btn-block" (click)="closeAll()">Kayıt Ol</a>
+        }
+      </div>
+    </nav>
+
+    <!-- Sağ taraf: hesap işlemleri (masaüstü) + hamburger (mobil) -->
+    <div class="nav-actions">
+      @if (auth.isLoggedIn()) {
+        <a routerLink="/customer/reservations" class="icon-link desktop-only">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="16" rx="2" />
+            <path d="M3 10h18M8 3v4M16 3v4" />
+          </svg>
+          Rezervasyonlarım
+        </a>
+
+        <div class="user-menu desktop-only">
+          <button
+            type="button"
+            class="user-button"
+            (click)="toggleUserMenu()"
+            [attr.aria-expanded]="userMenuOpen()"
+            aria-haspopup="menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <circle cx="12" cy="10" r="3" />
+              <path d="M6.5 18.5c1.5-2.2 3.4-3.2 5.5-3.2s4 1 5.5 3.2" />
+            </svg>
+            {{ auth.firstName() }}
+            <svg class="chevron" [class.rotated]="userMenuOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+
+          @if (userMenuOpen()) {
+            <div class="dropdown" role="menu">
+              <a routerLink="/customer/dashboard" role="menuitem" (click)="closeAll()">Hesabım</a>
+              @if (auth.isAdmin()) {
+                <a routerLink="/admin/dashboard" role="menuitem" (click)="closeAll()">Yönetim Paneli</a>
+              }
+              <button type="button" role="menuitem" (click)="logout()">Çıkış Yap</button>
+            </div>
+          }
+        </div>
+      } @else {
+        <a routerLink="/login" class="icon-link desktop-only">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <circle cx="12" cy="10" r="3" />
+            <path d="M6.5 18.5c1.5-2.2 3.4-3.2 5.5-3.2s4 1 5.5 3.2" />
+          </svg>
+          Giriş Yap
+        </a>
+        <a routerLink="/register" class="btn btn-gold btn-sm desktop-only">Kayıt Ol</a>
+      }
+
+      <button
+        type="button"
+        class="menu-toggle"
+        (click)="toggleMobileMenu()"
+        [attr.aria-expanded]="mobileMenuOpen()"
+        [attr.aria-label]="mobileMenuOpen() ? 'Menüyü kapat' : 'Menüyü aç'">
+        @if (mobileMenuOpen()) {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        }
+      </button>
+    </div>
+  </div>
+</header>
