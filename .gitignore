@@ -1,0 +1,12 @@
+# Gizli ayarlar - ASLA GitHub'a gitmesin
+backend/local.properties
+
+# Derleme çıktıları
+backend/target/
+
+# Editör ayarları
+.vscode/
+.idea/
+
+# Loglar
+*.log
