@@ -201,3 +201,18 @@ Authorization: Bearer {{admin.response.body.token}}
 ### E7) Dashboard → arrivalsToday boş, inHouseCount arttı
 GET {{baseUrl}}/api/admin/dashboard
 Authorization: Bearer {{admin.response.body.token}}
+
+
+
+# ============ F) CORS ============
+# Tarayıcının istekten önce gönderdiği "izin var mı?" sorusunu taklit eder
+
+### F1) Angular adresi → 200, cevapta "Access-Control-Allow-Origin: http://localhost:4200"
+OPTIONS {{baseUrl}}/api/room-types
+Origin: http://localhost:4200
+Access-Control-Request-Method: GET
+
+### F2) İzinsiz adres → 403
+OPTIONS {{baseUrl}}/api/room-types
+Origin: http://kotu-site.com
+Access-Control-Request-Method: GET
