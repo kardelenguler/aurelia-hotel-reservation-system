@@ -52,9 +52,21 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    // Rezervasyonu iptal et: /api/reservations/1/cancel
+    // İptal: /api/reservations/1/cancel
     @PatchMapping("/{id}/cancel")
     public Reservation cancelReservation(@PathVariable Integer id) {
         return reservationService.cancelReservation(id);
+    }
+
+    // Check-in (ileride sadece admin): /api/reservations/1/check-in
+    @PatchMapping("/{id}/check-in")
+    public Reservation checkIn(@PathVariable Integer id) {
+        return reservationService.checkIn(id);
+    }
+
+    // Check-out (ileride sadece admin): /api/reservations/1/check-out
+    @PatchMapping("/{id}/check-out")
+    public Reservation checkOut(@PathVariable Integer id) {
+        return reservationService.checkOut(id);
     }
 }

@@ -149,4 +149,42 @@ public class ReservationService {
         log.info("Rezervasyon iptal edildi: id={}", id);
         return reservation;
     }
+
+    @Transactional
+    public Reservation checkIn(Integer id) {
+        Reservation reservation = getReservationById(id);
+        LocalDate today = LocalDate.now();
+
+        if (!ReservationStatus.CONFIRMED.equals(reservation.getStatus())) {
+            throw new IllegalArgumentException(
+                    "Sadece onaylanmış (ödemesi yapılmış) rezervasyonlarda giriş yapılabilir.");
+        }
+        if (today.isBefore(reservation.getCheckInDate())) {
+            throw new IllegalArgumentException(
+                    "Giriş tarihi henüz gelmedi (giriş: " + reservation.getCheckInDate() + ").");
+        }
+        if (!today.isBefore(reservation.getCheckOutDate())) {
+            throw new IllegalArgumentException("Çıkış tarihi geçmiş rezervasyona giriş yapılamaz.");
+        }
+
+        reservation.setStatus(ReservationStatus.CHECKED_IN);
+        log.info("Check-in yapıldı: rezervasyon={}, oda={}",
+                id, reservation.getRoom().getRoomNumber());
+        return reservation;
+    }
+
+    @Transactional
+    public Reservation checkOut(Integer id) {
+        Reservation reservation = getReservationById(id);
+
+        if (!ReservationStatus.CHECKED_IN.equals(reservation.getStatus())) {
+            throw new IllegalArgumentException(
+                    "Sadece giriş yapılmış rezervasyonlarda çıkış yapılabilir.");
+        }
+
+        reservation.setStatus(ReservationStatus.CHECKED_OUT);
+        log.info("Check-out yapıldı: rezervasyon={}, oda={}",
+                id, reservation.getRoom().getRoomNumber());
+        return reservation;
+    }
 }

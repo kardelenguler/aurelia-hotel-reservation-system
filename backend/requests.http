@@ -108,3 +108,48 @@ GET http://localhost:8080/api/reservations/{{newRes.response.body.id}}/payment
 
 ### 13) Tekrar iptal → 400
 PATCH http://localhost:8080/api/reservations/{{newRes.response.body.id}}/cancel
+
+
+
+# ============ CHECK-IN / CHECK-OUT AKIŞI ============
+# 14'ten 21'e SIRAYLA çalıştır
+# Tarihler otomatik: bugün → 2 gün sonra
+
+### 14) BUGÜN başlayan rezervasyon (oda 401) → 201
+# @name todayRes
+POST http://localhost:8080/api/reservations
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "roomId": 8,
+  "checkInDate": "{{$localDatetime 'YYYY-MM-DD'}}",
+  "checkOutDate": "{{$localDatetime 'YYYY-MM-DD' 2 d}}",
+  "guestCount": 2
+}
+
+### 15) Ödemeden check-in → 400
+PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/check-in
+
+### 16) Ödeme yap (nakit) → 201
+POST http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/payment
+Content-Type: application/json
+
+{
+  "method": "cash"
+}
+
+### 17) Check-in → 200, "checked_in"
+PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/check-in
+
+### 18) Giriş yapılmışken iptal → 400
+PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/cancel
+
+### 19) Check-out → 200, "checked_out"
+PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/check-out
+
+### 20) Tekrar check-out → 400
+PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/check-out
+
+### 21) Gelecek tarihli rezervasyona check-in (Ayşe, 20 Aralık) → 400
+PATCH http://localhost:8080/api/reservations/1/check-in
