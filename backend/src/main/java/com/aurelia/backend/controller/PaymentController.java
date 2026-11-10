@@ -2,10 +2,13 @@ package com.aurelia.backend.controller;
 
 import com.aurelia.backend.dto.PaymentRequest;
 import com.aurelia.backend.entity.Payment;
+import com.aurelia.backend.security.AuthUser;
 import com.aurelia.backend.service.PaymentService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,15 +28,16 @@ public class PaymentController {
 
     // Ödemeyi görüntüle
     @GetMapping
-    public Payment getPayment(@PathVariable Integer reservationId) {
-        return paymentService.getPaymentByReservation(reservationId);
+    public Payment getPayment(@PathVariable Integer reservationId, @AuthenticationPrincipal Jwt jwt) {
+        return paymentService.getPaymentByReservation(reservationId, AuthUser.from(jwt));
     }
 
     // Ödeme yap
     @PostMapping
     public ResponseEntity<Payment> pay(@PathVariable Integer reservationId,
-                                       @Valid @RequestBody PaymentRequest request) {
-        Payment payment = paymentService.pay(reservationId, request);
+                                       @Valid @RequestBody PaymentRequest request,
+                                       @AuthenticationPrincipal Jwt jwt) {
+        Payment payment = paymentService.pay(reservationId, request, AuthUser.from(jwt));
         return ResponseEntity.status(HttpStatus.CREATED).body(payment);
     }
 }

@@ -7,7 +7,7 @@ import com.aurelia.backend.entity.ReservationStatus;
 import com.aurelia.backend.exception.ConflictException;
 import com.aurelia.backend.exception.ResourceNotFoundException;
 import com.aurelia.backend.repository.PaymentRepository;
-import com.aurelia.backend.repository.ReservationRepository;
+import com.aurelia.backend.security.AuthUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,25 +19,26 @@ public class PaymentService {
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private final PaymentRepository paymentRepository;
-    private final ReservationRepository reservationRepository;
+    private final ReservationService reservationService;
 
     public PaymentService(PaymentRepository paymentRepository,
-                          ReservationRepository reservationRepository) {
+                          ReservationService reservationService) {
         this.paymentRepository = paymentRepository;
-        this.reservationRepository = reservationRepository;
+        this.reservationService = reservationService;
     }
 
-    public Payment getPaymentByReservation(Integer reservationId) {
+    // Ödemeyi görüntüle (rezervasyon sahibi veya admin)
+    public Payment getPaymentByReservation(Integer reservationId, AuthUser authUser) {
+        reservationService.getReservationForUser(reservationId, authUser); // yetki + varlık kontrolü
         return paymentRepository.findByReservationId(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Bu rezervasyon için ödeme kaydı bulunamadı (id: " + reservationId + ")."));
     }
 
+    // Ödeme yap (rezervasyon sahibi veya admin)
     @Transactional
-    public Payment pay(Integer reservationId, PaymentRequest request) {
-        Reservation reservation = reservationRepository.findById(reservationId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Rezervasyon bulunamadı (id: " + reservationId + ")."));
+    public Payment pay(Integer reservationId, PaymentRequest request, AuthUser authUser) {
+        Reservation reservation = reservationService.getReservationForUser(reservationId, authUser);
 
         if (paymentRepository.existsByReservationId(reservationId)) {
             throw new ConflictException("Bu rezervasyon için zaten ödeme yapılmış.");

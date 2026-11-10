@@ -1,310 +1,156 @@
-### 1) BAŞARILI: Ayşe, oda 101, 3 gece → 201 (ikinci kez gönderilirse 409)
-POST http://localhost:8080/api/reservations
+# =====================================================
+#  AURELIA GRAND RESORT — API TESTLERİ
+#  Önce A1 ve A3'ü çalıştır (token'lar alınır)
+# =====================================================
+
+@baseUrl = http://localhost:8080
+
+
+# ============ A) GİRİŞ ============
+
+### A1) Admin girişi (Kardelen) → 200, role: "admin"
+# @name admin
+POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "userId": 2,
-  "roomId": 1,
-  "checkInDate": "2026-12-20",
-  "checkOutDate": "2026-12-23",
-  "guestCount": 2
+  "email": "kardelen@aurelia.com",
+  "password": "Aurelia2026!"
 }
 
-### 2) ÇAKIŞMA: oda 201 zaten dolu → 409
-POST http://localhost:8080/api/reservations
+### A2) Müşteri kaydı → 201 (ikinci kez 409, normal)
+POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
-  "userId": 2,
-  "roomId": 4,
-  "checkInDate": "2026-12-22",
-  "checkOutDate": "2026-12-26",
-  "guestCount": 2
+  "fullName": "Elif Demir",
+  "email": "elif@example.com",
+  "password": "Musteri2026!"
 }
 
-### 3) KAPASİTE: oda 102 en fazla 2 kişi → 400
-POST http://localhost:8080/api/reservations
+### A3) Müşteri girişi → 200, role: "customer"
+# @name customer
+POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
 
 {
-  "userId": 2,
+  "email": "elif@example.com",
+  "password": "Musteri2026!"
+}
+
+### A4) Ben kimim? (müşteri) → 200
+GET {{baseUrl}}/api/auth/me
+Authorization: Bearer {{customer.response.body.token}}
+
+
+# ============ P) HERKESE AÇIK ============
+
+### P1) Oda tipleri (token yok) → 200
+GET {{baseUrl}}/api/room-types
+
+### P2) Müsait oda arama (token yok) → 200
+GET {{baseUrl}}/api/rooms/available?checkIn=2027-05-10&checkOut=2027-05-12&guests=2
+
+### P3) Tüm odalar — token yok → 401
+GET {{baseUrl}}/api/rooms
+
+### P4) Tüm odalar — müşteri → 403
+GET {{baseUrl}}/api/rooms
+Authorization: Bearer {{customer.response.body.token}}
+
+### P5) Tüm odalar — admin → 200
+GET {{baseUrl}}/api/rooms
+Authorization: Bearer {{admin.response.body.token}}
+
+
+# ============ C) MÜŞTERİ ============
+
+### C1) Rezervasyon oluştur (oda 102) → 201 (ikinci kez 409, normal)
+# @name myRes
+POST {{baseUrl}}/api/reservations
+Authorization: Bearer {{customer.response.body.token}}
+Content-Type: application/json
+
+{
   "roomId": 2,
-  "checkInDate": "2027-01-10",
-  "checkOutDate": "2027-01-12",
-  "guestCount": 3
-}
-
-### 4) EKSİK ALAN → 400
-POST http://localhost:8080/api/reservations
-Content-Type: application/json
-
-{
-  "userId": 2,
-  "checkInDate": "2027-01-10",
-  "checkOutDate": "2027-01-12"
-}
-
-### 5) OLMAYAN ODA → 404
-POST http://localhost:8080/api/reservations
-Content-Type: application/json
-
-{
-  "userId": 2,
-  "roomId": 999,
-  "checkInDate": "2027-01-10",
-  "checkOutDate": "2027-01-12",
-  "guestCount": 1
-}
-
-### 6) Tüm rezervasyonlar
-GET http://localhost:8080/api/reservations
-
-
-# ============ ÖDEME + İPTAL AKIŞI ============
-# 7'den 12'ye SIRAYLA çalıştır
-
-### 7) Yeni rezervasyon (pending) → 201
-# @name newRes
-POST http://localhost:8080/api/reservations
-Content-Type: application/json
-
-{
-  "userId": 2,
-  "roomId": 3,
-  "checkInDate": "2027-02-10",
-  "checkOutDate": "2027-02-13",
-  "guestCount": 1
-}
-
-### 8) HATALI ödeme yöntemi → 400
-POST http://localhost:8080/api/reservations/{{newRes.response.body.id}}/payment
-Content-Type: application/json
-
-{
-  "method": "bitcoin"
-}
-
-### 9) Ödeme yap → 201, rezervasyon "confirmed" olur
-POST http://localhost:8080/api/reservations/{{newRes.response.body.id}}/payment
-Content-Type: application/json
-
-{
-  "method": "card"
-}
-
-### 10) Tekrar ödeme → 409
-POST http://localhost:8080/api/reservations/{{newRes.response.body.id}}/payment
-Content-Type: application/json
-
-{
-  "method": "card"
-}
-
-### 11) İptal et → 200, durum "cancelled"
-PATCH http://localhost:8080/api/reservations/{{newRes.response.body.id}}/cancel
-
-### 12) Ödemeyi gör → durum "refunded"
-GET http://localhost:8080/api/reservations/{{newRes.response.body.id}}/payment
-
-### 13) Tekrar iptal → 400
-PATCH http://localhost:8080/api/reservations/{{newRes.response.body.id}}/cancel
-
-
-
-# ============ CHECK-IN / CHECK-OUT AKIŞI ============
-# 14'ten 21'e SIRAYLA çalıştır
-# Tarihler otomatik: bugün → 2 gün sonra
-
-### 14) BUGÜN başlayan rezervasyon (oda 401) → 201
-# @name todayRes
-POST http://localhost:8080/api/reservations
-Content-Type: application/json
-
-{
-  "userId": 2,
-  "roomId": 8,
-  "checkInDate": "{{$localDatetime 'YYYY-MM-DD'}}",
-  "checkOutDate": "{{$localDatetime 'YYYY-MM-DD' 2 d}}",
+  "checkInDate": "2027-05-10",
+  "checkOutDate": "2027-05-12",
   "guestCount": 2
 }
 
-### 15) Ödemeden check-in → 400
-PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/check-in
+### C2) Benim rezervasyonlarım → 200 (sadece Elif'inkiler)
+GET {{baseUrl}}/api/reservations/my
+Authorization: Bearer {{customer.response.body.token}}
 
-### 16) Ödeme yap (nakit) → 201
-POST http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/payment
+### C3) Ödeme yap → 201
+POST {{baseUrl}}/api/reservations/{{myRes.response.body.id}}/payment
+Authorization: Bearer {{customer.response.body.token}}
 Content-Type: application/json
 
 {
-  "method": "cash"
+  "method": "card"
 }
 
-### 17) Check-in → 200, "checked_in"
-PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/check-in
+### C4) Başkasının (Ayşe) rezervasyonunu görme → 403
+GET {{baseUrl}}/api/reservations/1
+Authorization: Bearer {{customer.response.body.token}}
 
-### 18) Giriş yapılmışken iptal → 400
-PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/cancel
+### C5) Tüm rezervasyonlar (müşteri) → 403
+GET {{baseUrl}}/api/reservations
+Authorization: Bearer {{customer.response.body.token}}
 
-### 19) Check-out → 200, "checked_out"
-PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/check-out
+### C6) Check-in deneme (müşteri) → 403
+PATCH {{baseUrl}}/api/reservations/{{myRes.response.body.id}}/check-in
+Authorization: Bearer {{customer.response.body.token}}
 
-### 20) Tekrar check-out → 400
-PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/check-out
-
-### 21) Gelecek tarihli rezervasyona check-in (Ayşe, 20 Aralık) → 400
-PATCH http://localhost:8080/api/reservations/1/check-in
-
+### C7) Kendi rezervasyonunu iptal → 200, cancelled
+PATCH {{baseUrl}}/api/reservations/{{myRes.response.body.id}}/cancel
+Authorization: Bearer {{customer.response.body.token}}
 
 
-# ============ ADMIN: ODA YÖNETİMİ ============
-# 22'den 30'a SIRAYLA çalıştır
+# ============ D) ADMIN ============
 
-### 22) Yeni oda ekle (501, King Suite) → 201
-# @name newRoom
-POST http://localhost:8080/api/rooms
-Content-Type: application/json
+### D1) Tüm rezervasyonlar → 200
+GET {{baseUrl}}/api/reservations
+Authorization: Bearer {{admin.response.body.token}}
 
-{
-  "roomNumber": "501",
-  "roomTypeId": 4,
-  "floor": 5
-}
+### D2) Ayşe'nin rezervasyonları → 200
+GET {{baseUrl}}/api/reservations/user/2
+Authorization: Bearer {{admin.response.body.token}}
 
-### 23) Aynı numara tekrar → 409
-POST http://localhost:8080/api/rooms
-Content-Type: application/json
+### D3) Müşterinin rezervasyonunu görüntüle → 200
+GET {{baseUrl}}/api/reservations/{{myRes.response.body.id}}
+Authorization: Bearer {{admin.response.body.token}}
 
-{
-  "roomNumber": "501",
-  "roomTypeId": 4,
-  "floor": 5
-}
-
-### 24) Boş oda numarası → 400
-POST http://localhost:8080/api/rooms
-Content-Type: application/json
-
-{
-  "roomNumber": "   ",
-  "roomTypeId": 1,
-  "floor": 1
-}
-
-### 25) Olmayan oda tipi → 404
-POST http://localhost:8080/api/rooms
+### D4) Oda ekle (601) → 201 (ikinci kez 409, normal)
+POST {{baseUrl}}/api/rooms
+Authorization: Bearer {{admin.response.body.token}}
 Content-Type: application/json
 
 {
   "roomNumber": "601",
-  "roomTypeId": 99,
+  "roomTypeId": 2,
   "floor": 6
 }
 
-### 26) Odayı düzenle (Family Suite yap) → 200
-PUT http://localhost:8080/api/rooms/{{newRoom.response.body.id}}
+### D5) Gelecek tarihli rezervasyona check-in → 400 (kural)
+PATCH {{baseUrl}}/api/reservations/1/check-in
+Authorization: Bearer {{admin.response.body.token}}
+
+
+# ============ S) GÜVENLİK ============
+
+### S1) Token olmadan rezervasyon → 401
+POST {{baseUrl}}/api/reservations
 Content-Type: application/json
 
 {
-  "roomNumber": "501",
-  "roomTypeId": 3,
-  "floor": 5
+  "roomId": 3,
+  "checkInDate": "2027-06-01",
+  "checkOutDate": "2027-06-03",
+  "guestCount": 1
 }
 
-### 27) Pasife al → 200, isActive: false
-PATCH http://localhost:8080/api/rooms/{{newRoom.response.body.id}}/deactivate
-
-### 28) Müsait arama → 501 listede OLMAMALI
-GET http://localhost:8080/api/rooms/available?checkIn=2027-04-01&checkOut=2027-04-03&guests=1
-
-### 29) Tekrar aktifleştir → 200, isActive: true
-PATCH http://localhost:8080/api/rooms/{{newRoom.response.body.id}}/activate
-
-### 30) Rezervasyonu olan odayı (201) pasife al → 409
-PATCH http://localhost:8080/api/rooms/4/deactivate
-
-
-
-# ============ KAYIT OL ============
-
-### 31) Kayıt ol → 201 (cevapta şifre OLMAMALI)
-POST http://localhost:8080/api/auth/register
-Content-Type: application/json
-
-{
-  "fullName": "Kardelen Güler",
-  "email": "kardelen@aurelia.com",
-  "password": "Aurelia2026!"
-}
-
-### 32) Aynı e-posta (büyük harfle) → 409
-POST http://localhost:8080/api/auth/register
-Content-Type: application/json
-
-{
-  "fullName": "Başka Biri",
-  "email": "KARDELEN@aurelia.com",
-  "password": "Aurelia2026!"
-}
-
-### 33) Geçersiz e-posta → 400
-POST http://localhost:8080/api/auth/register
-Content-Type: application/json
-
-{
-  "fullName": "Test",
-  "email": "bu-bir-eposta-degil",
-  "password": "Aurelia2026!"
-}
-
-### 34) Kısa şifre → 400
-POST http://localhost:8080/api/auth/register
-Content-Type: application/json
-
-{
-  "fullName": "Test",
-  "email": "test@aurelia.com",
-  "password": "123"
-}
-
-
-
-# ============ GİRİŞ YAP + TOKEN ============
-
-### 35) Giriş yap → 200, token gelir
-# @name login
-POST http://localhost:8080/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "kardelen@aurelia.com",
-  "password": "Aurelia2026!"
-}
-
-### 36) Yanlış şifre → 401
-POST http://localhost:8080/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "kardelen@aurelia.com",
-  "password": "yanlisSifre123"
-}
-
-### 37) Olmayan e-posta → 401 (aynı mesaj)
-POST http://localhost:8080/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "yok@aurelia.com",
-  "password": "Aurelia2026!"
-}
-
-### 38) Token ile "ben kimim?" → 200, senin bilgilerin
-GET http://localhost:8080/api/auth/me
-Authorization: Bearer {{login.response.body.token}}
-
-### 39) Token olmadan → 401
-GET http://localhost:8080/api/auth/me
-
-### 40) Sahte token → 401
-GET http://localhost:8080/api/auth/me
+### S2) Sahte token → 401
+GET {{baseUrl}}/api/reservations/my
 Authorization: Bearer bu.sahte.token

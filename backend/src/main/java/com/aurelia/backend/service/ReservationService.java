@@ -7,11 +7,14 @@ import com.aurelia.backend.entity.ReservationStatus;
 import com.aurelia.backend.entity.Room;
 import com.aurelia.backend.entity.User;
 import com.aurelia.backend.exception.ConflictException;
+import com.aurelia.backend.exception.ForbiddenException;
 import com.aurelia.backend.exception.ResourceNotFoundException;
+import com.aurelia.backend.exception.UnauthorizedException;
 import com.aurelia.backend.repository.PaymentRepository;
 import com.aurelia.backend.repository.ReservationRepository;
 import com.aurelia.backend.repository.RoomRepository;
 import com.aurelia.backend.repository.UserRepository;
+import com.aurelia.backend.security.AuthUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -43,21 +46,34 @@ public class ReservationService {
         this.paymentRepository = paymentRepository;
     }
 
+    // ---------- Okuma ----------
+
+    // Admin: tüm rezervasyonlar
     public List<Reservation> getAllReservations() {
         return reservationRepository.findAll();
     }
 
-    public Reservation getReservationById(Integer id) {
-        return reservationRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Rezervasyon bulunamadı (id: " + id + ")."));
-    }
-
+    // Admin: bir kullanıcının rezervasyonları
     public List<Reservation> getReservationsByUser(Integer userId) {
         return reservationRepository.findByUserIdOrderByCheckInDateDesc(userId);
     }
 
+    // Giriş yapmış kullanıcının kendi rezervasyonları
+    public List<Reservation> getMyReservations(AuthUser authUser) {
+        return reservationRepository.findByUserIdOrderByCheckInDateDesc(authUser.id());
+    }
+
+    // Tek rezervasyon: sahibi veya admin görebilir
+    public Reservation getReservationForUser(Integer id, AuthUser authUser) {
+        Reservation reservation = findReservation(id);
+        ensureOwnerOrAdmin(reservation, authUser);
+        return reservation;
+    }
+
+    // ---------- Oluşturma ----------
+
     @Transactional
-    public Reservation createReservation(CreateReservationRequest request) {
+    public Reservation createReservation(CreateReservationRequest request, AuthUser authUser) {
         LocalDate checkIn = request.checkInDate();
         LocalDate checkOut = request.checkOutDate();
 
@@ -69,10 +85,9 @@ public class ReservationService {
             throw new IllegalArgumentException("Çıkış tarihi, giriş tarihinden sonra olmalıdır.");
         }
 
-        // 2) Kullanıcı var mı?
-        User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Kullanıcı bulunamadı (id: " + request.userId() + ")."));
+        // 2) Kullanıcı token'dan
+        User user = userRepository.findById(authUser.id())
+                .orElseThrow(() -> new UnauthorizedException("Kullanıcı bulunamadı. Lütfen tekrar giriş yapın."));
 
         // 3) Oda var mı, aktif mi?
         Room room = roomRepository.findById(request.roomId())
@@ -94,7 +109,7 @@ public class ReservationService {
             throw new ConflictException("Bu oda seçilen tarihlerde dolu.");
         }
 
-        // 6) Fiyat hesapla: gece sayısı × gecelik fiyat
+        // 6) Fiyat: gece sayısı × gecelik fiyat
         long nights = ChronoUnit.DAYS.between(checkIn, checkOut);
         BigDecimal totalPrice = room.getRoomType().getPricePerNight()
                 .multiply(BigDecimal.valueOf(nights));
@@ -111,18 +126,19 @@ public class ReservationService {
 
         try {
             Reservation saved = reservationRepository.saveAndFlush(reservation);
-            log.info("Yeni rezervasyon: id={}, oda={}, {} → {}",
-                    saved.getId(), room.getRoomNumber(), checkIn, checkOut);
+            log.info("Yeni rezervasyon: id={}, kullanıcı={}, oda={}, {} → {}",
+                    saved.getId(), user.getId(), room.getRoomNumber(), checkIn, checkOut);
             return saved;
         } catch (DataIntegrityViolationException ex) {
-            // Aynı anda başka biri aynı odayı aldıysa veritabanı kuralı yakalar
             throw new ConflictException("Bu oda seçilen tarihlerde dolu.");
         }
     }
 
+    // ---------- İptal ----------
+
     @Transactional
-    public Reservation cancelReservation(Integer id) {
-        Reservation reservation = getReservationById(id);
+    public Reservation cancelReservation(Integer id, AuthUser authUser) {
+        Reservation reservation = getReservationForUser(id, authUser);
         String status = reservation.getStatus();
 
         if (ReservationStatus.CANCELLED.equals(status)) {
@@ -135,10 +151,8 @@ public class ReservationService {
             throw new IllegalArgumentException("Giriş günü gelmiş rezervasyon iptal edilemez.");
         }
 
-        // Silmiyoruz, durumunu değiştiriyoruz → geçmiş kayıt korunur
         reservation.setStatus(ReservationStatus.CANCELLED);
 
-        // Ödeme yapılmışsa iade edildi olarak işaretle
         paymentRepository.findByReservationId(id).ifPresent(payment -> {
             if (Payment.STATUS_PAID.equals(payment.getStatus())) {
                 payment.setStatus(Payment.STATUS_REFUNDED);
@@ -146,13 +160,15 @@ public class ReservationService {
             }
         });
 
-        log.info("Rezervasyon iptal edildi: id={}", id);
+        log.info("Rezervasyon iptal edildi: id={}, işlemi yapan={}", id, authUser.id());
         return reservation;
     }
 
+    // ---------- Check-in / Check-out (admin) ----------
+
     @Transactional
     public Reservation checkIn(Integer id) {
-        Reservation reservation = getReservationById(id);
+        Reservation reservation = findReservation(id);
         LocalDate today = LocalDate.now();
 
         if (!ReservationStatus.CONFIRMED.equals(reservation.getStatus())) {
@@ -168,14 +184,13 @@ public class ReservationService {
         }
 
         reservation.setStatus(ReservationStatus.CHECKED_IN);
-        log.info("Check-in yapıldı: rezervasyon={}, oda={}",
-                id, reservation.getRoom().getRoomNumber());
+        log.info("Check-in: rezervasyon={}, oda={}", id, reservation.getRoom().getRoomNumber());
         return reservation;
     }
 
     @Transactional
     public Reservation checkOut(Integer id) {
-        Reservation reservation = getReservationById(id);
+        Reservation reservation = findReservation(id);
 
         if (!ReservationStatus.CHECKED_IN.equals(reservation.getStatus())) {
             throw new IllegalArgumentException(
@@ -183,8 +198,21 @@ public class ReservationService {
         }
 
         reservation.setStatus(ReservationStatus.CHECKED_OUT);
-        log.info("Check-out yapıldı: rezervasyon={}, oda={}",
-                id, reservation.getRoom().getRoomNumber());
+        log.info("Check-out: rezervasyon={}, oda={}", id, reservation.getRoom().getRoomNumber());
         return reservation;
+    }
+
+    // ---------- Yardımcılar ----------
+
+    private Reservation findReservation(Integer id) {
+        return reservationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Rezervasyon bulunamadı (id: " + id + ")."));
+    }
+
+    private void ensureOwnerOrAdmin(Reservation reservation, AuthUser authUser) {
+        boolean isOwner = reservation.getUser().getId().equals(authUser.id());
+        if (!isOwner && !authUser.isAdmin()) {
+            throw new ForbiddenException("Bu rezervasyona erişim yetkiniz yok.");
+        }
     }
 }

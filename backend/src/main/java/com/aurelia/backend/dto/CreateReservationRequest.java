@@ -5,11 +5,8 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
-// Rezervasyon oluştururken dışarıdan gelecek veri (sadece gerekli alanlar)
+// userId YOK → kullanıcı token'dan alınır, kimse başkası adına rezervasyon yapamaz
 public record CreateReservationRequest(
-
-        @NotNull(message = "Kullanıcı seçilmelidir.")
-        Integer userId,
 
         @NotNull(message = "Oda seçilmelidir.")
         Integer roomId,
