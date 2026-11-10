@@ -221,3 +221,47 @@ PATCH http://localhost:8080/api/rooms/{{newRoom.response.body.id}}/activate
 
 ### 30) Rezervasyonu olan odayı (201) pasife al → 409
 PATCH http://localhost:8080/api/rooms/4/deactivate
+
+
+
+# ============ KAYIT OL ============
+
+### 31) Kayıt ol → 201 (cevapta şifre OLMAMALI)
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Kardelen Güler",
+  "email": "kardelen@aurelia.com",
+  "password": "Aurelia2026!"
+}
+
+### 32) Aynı e-posta (büyük harfle) → 409
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Başka Biri",
+  "email": "KARDELEN@aurelia.com",
+  "password": "Aurelia2026!"
+}
+
+### 33) Geçersiz e-posta → 400
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Test",
+  "email": "bu-bir-eposta-degil",
+  "password": "Aurelia2026!"
+}
+
+### 34) Kısa şifre → 400
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Test",
+  "email": "test@aurelia.com",
+  "password": "123"
+}
