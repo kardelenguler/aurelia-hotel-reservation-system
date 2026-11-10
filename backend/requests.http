@@ -1,4 +1,4 @@
-### 1) BAŞARILI: Ayşe, oda 101, 3 gece → 201 Created, toplam 9000
+### 1) BAŞARILI: Ayşe, oda 101, 3 gece → 201 (ikinci kez gönderilirse 409)
 POST http://localhost:8080/api/reservations
 Content-Type: application/json
 
@@ -22,7 +22,7 @@ Content-Type: application/json
   "guestCount": 2
 }
 
-### 3) KAPASİTE: oda 101 en fazla 2 kişi → 400
+### 3) KAPASİTE: oda 102 en fazla 2 kişi → 400
 POST http://localhost:8080/api/reservations
 Content-Type: application/json
 
@@ -34,7 +34,7 @@ Content-Type: application/json
   "guestCount": 3
 }
 
-### 4) EKSİK ALAN: oda ve kişi sayısı yok → 400
+### 4) EKSİK ALAN → 400
 POST http://localhost:8080/api/reservations
 Content-Type: application/json
 
@@ -56,5 +56,55 @@ Content-Type: application/json
   "guestCount": 1
 }
 
-### 6) Tüm rezervasyonları listele
+### 6) Tüm rezervasyonlar
 GET http://localhost:8080/api/reservations
+
+
+# ============ ÖDEME + İPTAL AKIŞI ============
+# 7'den 12'ye SIRAYLA çalıştır
+
+### 7) Yeni rezervasyon (pending) → 201
+# @name newRes
+POST http://localhost:8080/api/reservations
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "roomId": 3,
+  "checkInDate": "2027-02-10",
+  "checkOutDate": "2027-02-13",
+  "guestCount": 1
+}
+
+### 8) HATALI ödeme yöntemi → 400
+POST http://localhost:8080/api/reservations/{{newRes.response.body.id}}/payment
+Content-Type: application/json
+
+{
+  "method": "bitcoin"
+}
+
+### 9) Ödeme yap → 201, rezervasyon "confirmed" olur
+POST http://localhost:8080/api/reservations/{{newRes.response.body.id}}/payment
+Content-Type: application/json
+
+{
+  "method": "card"
+}
+
+### 10) Tekrar ödeme → 409
+POST http://localhost:8080/api/reservations/{{newRes.response.body.id}}/payment
+Content-Type: application/json
+
+{
+  "method": "card"
+}
+
+### 11) İptal et → 200, durum "cancelled"
+PATCH http://localhost:8080/api/reservations/{{newRes.response.body.id}}/cancel
+
+### 12) Ödemeyi gör → durum "refunded"
+GET http://localhost:8080/api/reservations/{{newRes.response.body.id}}/payment
+
+### 13) Tekrar iptal → 400
+PATCH http://localhost:8080/api/reservations/{{newRes.response.body.id}}/cancel

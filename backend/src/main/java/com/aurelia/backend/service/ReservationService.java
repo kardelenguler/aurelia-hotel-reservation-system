@@ -1,11 +1,14 @@
 package com.aurelia.backend.service;
 
 import com.aurelia.backend.dto.CreateReservationRequest;
+import com.aurelia.backend.entity.Payment;
 import com.aurelia.backend.entity.Reservation;
+import com.aurelia.backend.entity.ReservationStatus;
 import com.aurelia.backend.entity.Room;
 import com.aurelia.backend.entity.User;
 import com.aurelia.backend.exception.ConflictException;
 import com.aurelia.backend.exception.ResourceNotFoundException;
+import com.aurelia.backend.repository.PaymentRepository;
 import com.aurelia.backend.repository.ReservationRepository;
 import com.aurelia.backend.repository.RoomRepository;
 import com.aurelia.backend.repository.UserRepository;
@@ -28,13 +31,16 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
     private final RoomRepository roomRepository;
+    private final PaymentRepository paymentRepository;
 
     public ReservationService(ReservationRepository reservationRepository,
                               UserRepository userRepository,
-                              RoomRepository roomRepository) {
+                              RoomRepository roomRepository,
+                              PaymentRepository paymentRepository) {
         this.reservationRepository = reservationRepository;
         this.userRepository = userRepository;
         this.roomRepository = roomRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     public List<Reservation> getAllReservations() {
@@ -101,7 +107,7 @@ public class ReservationService {
         reservation.setCheckOutDate(checkOut);
         reservation.setGuestCount(request.guestCount());
         reservation.setTotalPrice(totalPrice);
-        reservation.setStatus("pending");
+        reservation.setStatus(ReservationStatus.PENDING);
 
         try {
             Reservation saved = reservationRepository.saveAndFlush(reservation);
@@ -112,5 +118,35 @@ public class ReservationService {
             // Aynı anda başka biri aynı odayı aldıysa veritabanı kuralı yakalar
             throw new ConflictException("Bu oda seçilen tarihlerde dolu.");
         }
+    }
+
+    @Transactional
+    public Reservation cancelReservation(Integer id) {
+        Reservation reservation = getReservationById(id);
+        String status = reservation.getStatus();
+
+        if (ReservationStatus.CANCELLED.equals(status)) {
+            throw new IllegalArgumentException("Bu rezervasyon zaten iptal edilmiş.");
+        }
+        if (ReservationStatus.CHECKED_IN.equals(status) || ReservationStatus.CHECKED_OUT.equals(status)) {
+            throw new IllegalArgumentException("Giriş yapılmış veya tamamlanmış rezervasyon iptal edilemez.");
+        }
+        if (!reservation.getCheckInDate().isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Giriş günü gelmiş rezervasyon iptal edilemez.");
+        }
+
+        // Silmiyoruz, durumunu değiştiriyoruz → geçmiş kayıt korunur
+        reservation.setStatus(ReservationStatus.CANCELLED);
+
+        // Ödeme yapılmışsa iade edildi olarak işaretle
+        paymentRepository.findByReservationId(id).ifPresent(payment -> {
+            if (Payment.STATUS_PAID.equals(payment.getStatus())) {
+                payment.setStatus(Payment.STATUS_REFUNDED);
+                log.info("Ödeme iade edildi: rezervasyon={}, tutar={}", id, payment.getAmount());
+            }
+        });
+
+        log.info("Rezervasyon iptal edildi: id={}", id);
+        return reservation;
     }
 }
