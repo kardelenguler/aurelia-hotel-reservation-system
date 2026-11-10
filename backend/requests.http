@@ -153,3 +153,71 @@ PATCH http://localhost:8080/api/reservations/{{todayRes.response.body.id}}/check
 
 ### 21) Gelecek tarihli rezervasyona check-in (Ayşe, 20 Aralık) → 400
 PATCH http://localhost:8080/api/reservations/1/check-in
+
+
+
+# ============ ADMIN: ODA YÖNETİMİ ============
+# 22'den 30'a SIRAYLA çalıştır
+
+### 22) Yeni oda ekle (501, King Suite) → 201
+# @name newRoom
+POST http://localhost:8080/api/rooms
+Content-Type: application/json
+
+{
+  "roomNumber": "501",
+  "roomTypeId": 4,
+  "floor": 5
+}
+
+### 23) Aynı numara tekrar → 409
+POST http://localhost:8080/api/rooms
+Content-Type: application/json
+
+{
+  "roomNumber": "501",
+  "roomTypeId": 4,
+  "floor": 5
+}
+
+### 24) Boş oda numarası → 400
+POST http://localhost:8080/api/rooms
+Content-Type: application/json
+
+{
+  "roomNumber": "   ",
+  "roomTypeId": 1,
+  "floor": 1
+}
+
+### 25) Olmayan oda tipi → 404
+POST http://localhost:8080/api/rooms
+Content-Type: application/json
+
+{
+  "roomNumber": "601",
+  "roomTypeId": 99,
+  "floor": 6
+}
+
+### 26) Odayı düzenle (Family Suite yap) → 200
+PUT http://localhost:8080/api/rooms/{{newRoom.response.body.id}}
+Content-Type: application/json
+
+{
+  "roomNumber": "501",
+  "roomTypeId": 3,
+  "floor": 5
+}
+
+### 27) Pasife al → 200, isActive: false
+PATCH http://localhost:8080/api/rooms/{{newRoom.response.body.id}}/deactivate
+
+### 28) Müsait arama → 501 listede OLMAMALI
+GET http://localhost:8080/api/rooms/available?checkIn=2027-04-01&checkOut=2027-04-03&guests=1
+
+### 29) Tekrar aktifleştir → 200, isActive: true
+PATCH http://localhost:8080/api/rooms/{{newRoom.response.body.id}}/activate
+
+### 30) Rezervasyonu olan odayı (201) pasife al → 409
+PATCH http://localhost:8080/api/rooms/4/deactivate

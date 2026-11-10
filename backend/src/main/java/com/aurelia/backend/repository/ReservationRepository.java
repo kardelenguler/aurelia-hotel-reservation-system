@@ -25,4 +25,15 @@ public interface ReservationRepository extends JpaRepository<Reservation, Intege
     boolean existsOverlapping(@Param("roomId") Integer roomId,
                               @Param("checkIn") LocalDate checkIn,
                               @Param("checkOut") LocalDate checkOut);
+
+    // Bu odanın devam eden veya gelecek aktif rezervasyonu var mı?
+    @Query("""
+            SELECT COUNT(r) > 0
+            FROM Reservation r
+            WHERE r.room.id = :roomId
+              AND r.status IN ('pending', 'confirmed', 'checked_in')
+              AND r.checkOutDate > :today
+            """)
+    boolean hasActiveOrUpcomingReservations(@Param("roomId") Integer roomId,
+                                            @Param("today") LocalDate today);
 }

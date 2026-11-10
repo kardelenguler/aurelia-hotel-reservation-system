@@ -13,6 +13,12 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
     // Sadece aktif odaları getir
     List<Room> findByIsActiveTrue();
 
+    // Bu oda numarası kullanılıyor mu? (yeni oda eklerken)
+    boolean existsByRoomNumber(String roomNumber);
+
+    // Bu oda numarası BAŞKA bir odada kullanılıyor mu? (düzenlerken)
+    boolean existsByRoomNumberAndIdNot(String roomNumber, Integer id);
+
     // Müsait odalar: aktif + kapasitesi yeten + o tarihlerde çakışan rezervasyonu olmayan
     @Query(value = """
             SELECT r.*
