@@ -43,6 +43,10 @@ public class Payment {
     @Column(name = "status", nullable = false, length = 20)
     private String status = STATUS_PAID;
 
+    // İade edilen tutar (tam iade = amount, %50 iade = amount / 2, iade yok = 0)
+    @Column(name = "refund_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal refundAmount = BigDecimal.ZERO;
+
     @Column(name = "paid_at", nullable = false, updatable = false)
     private OffsetDateTime paidAt;
 
@@ -93,6 +97,14 @@ public class Payment {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public BigDecimal getRefundAmount() {
+        return refundAmount;
+    }
+
+    public void setRefundAmount(BigDecimal refundAmount) {
+        this.refundAmount = refundAmount;
     }
 
     public OffsetDateTime getPaidAt() {

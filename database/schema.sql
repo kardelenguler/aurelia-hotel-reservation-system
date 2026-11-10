@@ -61,5 +61,9 @@ CREATE TABLE payments (
     method VARCHAR(20) NOT NULL CHECK (method IN ('card', 'cash')),
     status VARCHAR(20) NOT NULL DEFAULT 'paid'
         CHECK (status IN ('paid', 'refunded')),
-    paid_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    refund_amount NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    paid_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- İade tutarı 0 ile ödenen tutar arasında olmalı
+    CONSTRAINT chk_refund_amount CHECK (refund_amount >= 0 AND refund_amount <= amount)
 );

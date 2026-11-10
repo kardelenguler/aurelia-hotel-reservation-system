@@ -1,5 +1,6 @@
 package com.aurelia.backend.service;
 
+import com.aurelia.backend.dto.CancellationPreview;
 import com.aurelia.backend.dto.CreateReservationRequest;
 import com.aurelia.backend.entity.Payment;
 import com.aurelia.backend.entity.Reservation;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -30,6 +32,11 @@ import java.util.List;
 public class ReservationService {
 
     private static final Logger log = LoggerFactory.getLogger(ReservationService.class);
+
+    // İptal politikası: girişe 7+ gün → %100 iade, 1-6 gün → %50 iade, giriş günü → iptal yok
+    private static final int FULL_REFUND_MIN_DAYS = 7;
+    private static final int FULL_REFUND_PERCENT = 100;
+    private static final int PARTIAL_REFUND_PERCENT = 50;
 
     private final ReservationRepository reservationRepository;
     private final UserRepository userRepository;
@@ -136,32 +143,81 @@ public class ReservationService {
 
     // ---------- İptal ----------
 
+    // İptal etmeden önce: iptal edilebilir mi, ne kadar iade alınır?
+    public CancellationPreview previewCancellation(Integer id, AuthUser authUser) {
+        Reservation reservation = getReservationForUser(id, authUser);
+        return evaluateCancellation(reservation);
+    }
+
     @Transactional
     public Reservation cancelReservation(Integer id, AuthUser authUser) {
         Reservation reservation = getReservationForUser(id, authUser);
-        String status = reservation.getStatus();
+        CancellationPreview preview = evaluateCancellation(reservation);
 
-        if (ReservationStatus.CANCELLED.equals(status)) {
-            throw new IllegalArgumentException("Bu rezervasyon zaten iptal edilmiş.");
-        }
-        if (ReservationStatus.CHECKED_IN.equals(status) || ReservationStatus.CHECKED_OUT.equals(status)) {
-            throw new IllegalArgumentException("Giriş yapılmış veya tamamlanmış rezervasyon iptal edilemez.");
-        }
-        if (!reservation.getCheckInDate().isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("Giriş günü gelmiş rezervasyon iptal edilemez.");
+        if (!preview.cancellable()) {
+            throw new IllegalArgumentException(preview.message());
         }
 
+        // Silmiyoruz, durumunu değiştiriyoruz → geçmiş kayıt korunur
         reservation.setStatus(ReservationStatus.CANCELLED);
 
+        // Ödeme yapılmışsa politikaya göre iade
         paymentRepository.findByReservationId(id).ifPresent(payment -> {
             if (Payment.STATUS_PAID.equals(payment.getStatus())) {
+                payment.setRefundAmount(preview.refundAmount());
                 payment.setStatus(Payment.STATUS_REFUNDED);
-                log.info("Ödeme iade edildi: rezervasyon={}, tutar={}", id, payment.getAmount());
+                log.info("İade: rezervasyon={}, ödenen={}, iade=%{} → {}",
+                        id, payment.getAmount(), preview.refundPercent(), preview.refundAmount());
             }
         });
 
         log.info("Rezervasyon iptal edildi: id={}, işlemi yapan={}", id, authUser.id());
         return reservation;
+    }
+
+    // İptal kurallarını tek yerde hesaplar (hem önizleme hem iptal kullanır)
+    private CancellationPreview evaluateCancellation(Reservation reservation) {
+        String status = reservation.getStatus();
+        long daysUntilCheckIn = ChronoUnit.DAYS.between(LocalDate.now(), reservation.getCheckInDate());
+
+        BigDecimal paidAmount = paymentRepository.findByReservationId(reservation.getId())
+                .filter(payment -> Payment.STATUS_PAID.equals(payment.getStatus()))
+                .map(Payment::getAmount)
+                .orElse(BigDecimal.ZERO);
+
+        if (ReservationStatus.CANCELLED.equals(status)) {
+            return notCancellable(daysUntilCheckIn, paidAmount, "Bu rezervasyon zaten iptal edilmiş.");
+        }
+        if (ReservationStatus.CHECKED_IN.equals(status) || ReservationStatus.CHECKED_OUT.equals(status)) {
+            return notCancellable(daysUntilCheckIn, paidAmount,
+                    "Giriş yapılmış veya tamamlanmış rezervasyon iptal edilemez.");
+        }
+        if (daysUntilCheckIn <= 0) {
+            return notCancellable(daysUntilCheckIn, paidAmount, "Giriş günü gelmiş rezervasyon iptal edilemez.");
+        }
+
+        int refundPercent = daysUntilCheckIn >= FULL_REFUND_MIN_DAYS
+                ? FULL_REFUND_PERCENT
+                : PARTIAL_REFUND_PERCENT;
+
+        BigDecimal refundAmount = paidAmount
+                .multiply(BigDecimal.valueOf(refundPercent))
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+
+        String message;
+        if (paidAmount.signum() == 0) {
+            message = "Ödeme yapılmadığı için iade söz konusu değildir.";
+        } else if (refundPercent == FULL_REFUND_PERCENT) {
+            message = "Girişe 7 gün veya daha fazla kaldığı için ödemenin tamamı iade edilir.";
+        } else {
+            message = "Girişe 7 günden az kaldığı için ödemenin %50'si iade edilir.";
+        }
+
+        return new CancellationPreview(true, daysUntilCheckIn, refundPercent, paidAmount, refundAmount, message);
+    }
+
+    private CancellationPreview notCancellable(long days, BigDecimal paidAmount, String message) {
+        return new CancellationPreview(false, days, 0, paidAmount, BigDecimal.ZERO, message);
     }
 
     // ---------- Check-in / Check-out (admin) ----------

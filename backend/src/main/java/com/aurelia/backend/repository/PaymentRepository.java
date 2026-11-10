@@ -18,12 +18,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     @Query("SELECT COUNT(p) > 0 FROM Payment p WHERE p.reservation.id = :reservationId")
     boolean existsByReservationId(@Param("reservationId") Integer reservationId);
 
-    // Belirli tarih aralığında alınan ödemelerin toplamı (iade edilenler hariç)
+    // Net gelir: alınan ödemeler − yapılan iadeler (%50 iadede kalan yarısı gelir sayılır)
     @Query("""
-            SELECT COALESCE(SUM(p.amount), 0)
+            SELECT COALESCE(SUM(p.amount - p.refundAmount), 0)
             FROM Payment p
-            WHERE p.status = 'paid'
-              AND p.paidAt >= :start
+            WHERE p.paidAt >= :start
               AND p.paidAt < :end
             """)
     BigDecimal sumPaidBetween(@Param("start") OffsetDateTime start,

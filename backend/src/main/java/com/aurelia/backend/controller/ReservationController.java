@@ -1,5 +1,6 @@
 package com.aurelia.backend.controller;
 
+import com.aurelia.backend.dto.CancellationPreview;
 import com.aurelia.backend.dto.CreateReservationRequest;
 import com.aurelia.backend.entity.Reservation;
 import com.aurelia.backend.security.AuthUser;
@@ -51,6 +52,12 @@ public class ReservationController {
     @GetMapping("/{id}")
     public Reservation getReservationById(@PathVariable Integer id, @AuthenticationPrincipal Jwt jwt) {
         return reservationService.getReservationForUser(id, AuthUser.from(jwt));
+    }
+
+    // 👤 İptal önizleme: iptal edilebilir mi, ne kadar iade? (onay penceresi için)
+    @GetMapping("/{id}/cancellation-preview")
+    public CancellationPreview previewCancellation(@PathVariable Integer id, @AuthenticationPrincipal Jwt jwt) {
+        return reservationService.previewCancellation(id, AuthUser.from(jwt));
     }
 
     // 👤 Yeni rezervasyon (kullanıcı token'dan)

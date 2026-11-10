@@ -1,6 +1,13 @@
 # =====================================================
 #  AURELIA GRAND RESORT — API TESTLERİ
 #  Önce A1 ve A3'ü çalıştır (token'lar alınır)
+#
+#  Seed verisi:
+#  Kullanıcılar: 1 Kardelen (admin), 2 Ayşe, 3 Elif (müşteri)
+#  Odalar: 1-150 Standard, 151-240 Deluxe, 241-285 Family, 286-300 King
+#  Rezervasyonlar: 1 Ayşe (601, +20 gün, ödenmiş)
+#                  2 Ayşe (102, şu an otelde)
+#                  3 Elif (101, +40 gün, ödeme bekliyor)
 # =====================================================
 
 @baseUrl = http://localhost:8080
@@ -18,17 +25,17 @@ Content-Type: application/json
   "password": "Aurelia2026!"
 }
 
-### A2) Müşteri kaydı → 201 (ikinci kez 409, normal)
+### A2) Yeni müşteri kaydı → 201 (ikinci kez 409, normal)
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
-  "fullName": "Elif Demir",
-  "email": "elif@example.com",
+  "fullName": "Deniz Kaya",
+  "email": "deniz@example.com",
   "password": "Musteri2026!"
 }
 
-### A3) Müşteri girişi → 200, role: "customer"
+### A3) Müşteri girişi (Elif) → 200, role: "customer"
 # @name customer
 POST {{baseUrl}}/api/auth/login
 Content-Type: application/json
@@ -38,18 +45,14 @@ Content-Type: application/json
   "password": "Musteri2026!"
 }
 
-### A4) Ben kimim? (müşteri) → 200
-GET {{baseUrl}}/api/auth/me
-Authorization: Bearer {{customer.response.body.token}}
-
 
 # ============ P) HERKESE AÇIK ============
 
-### P1) Oda tipleri (token yok) → 200
+### P1) Oda tipleri → 200
 GET {{baseUrl}}/api/room-types
 
-### P2) Müsait oda arama (token yok) → 200
-GET {{baseUrl}}/api/rooms/available?checkIn=2027-05-10&checkOut=2027-05-12&guests=2
+### P2) Müsait oda arama (30 gün sonra, 2 gece, 4 kişi) → sadece Family Suite'ler
+GET {{baseUrl}}/api/rooms/available?checkIn={{$localDatetime 'YYYY-MM-DD' 30 d}}&checkOut={{$localDatetime 'YYYY-MM-DD' 32 d}}&guests=4
 
 ### P3) Tüm odalar — token yok → 401
 GET {{baseUrl}}/api/rooms
@@ -58,32 +61,24 @@ GET {{baseUrl}}/api/rooms
 GET {{baseUrl}}/api/rooms
 Authorization: Bearer {{customer.response.body.token}}
 
-### P5) Tüm odalar — admin → 200
-GET {{baseUrl}}/api/rooms
-Authorization: Bearer {{admin.response.body.token}}
 
+# ============ C) TAM İADE AKIŞI (girişe 60 gün) ============
 
-# ============ C) MÜŞTERİ ============
-
-### C1) Rezervasyon oluştur (oda 102) → 201 (ikinci kez 409, normal)
-# @name myRes
+### C1) Rezervasyon (oda 103) → 201 (aynı gün tekrar 409)
+# @name fullRes
 POST {{baseUrl}}/api/reservations
 Authorization: Bearer {{customer.response.body.token}}
 Content-Type: application/json
 
 {
-  "roomId": 2,
-  "checkInDate": "2027-05-10",
-  "checkOutDate": "2027-05-12",
+  "roomId": 3,
+  "checkInDate": "{{$localDatetime 'YYYY-MM-DD' 60 d}}",
+  "checkOutDate": "{{$localDatetime 'YYYY-MM-DD' 62 d}}",
   "guestCount": 2
 }
 
-### C2) Benim rezervasyonlarım → 200 (sadece Elif'inkiler)
-GET {{baseUrl}}/api/reservations/my
-Authorization: Bearer {{customer.response.body.token}}
-
-### C3) Ödeme yap → 201
-POST {{baseUrl}}/api/reservations/{{myRes.response.body.id}}/payment
+### C2) Ödeme → 201 (6.000 ₺)
+POST {{baseUrl}}/api/reservations/{{fullRes.response.body.id}}/payment
 Authorization: Bearer {{customer.response.body.token}}
 Content-Type: application/json
 
@@ -91,128 +86,70 @@ Content-Type: application/json
   "method": "card"
 }
 
-### C4) Başkasının (Ayşe) rezervasyonunu görme → 403
-GET {{baseUrl}}/api/reservations/1
+### C3) İptal önizleme → refundPercent: 100, refundAmount: 6000
+GET {{baseUrl}}/api/reservations/{{fullRes.response.body.id}}/cancellation-preview
 Authorization: Bearer {{customer.response.body.token}}
 
-### C5) Tüm rezervasyonlar (müşteri) → 403
-GET {{baseUrl}}/api/reservations
+### C4) İptal → 200, cancelled
+PATCH {{baseUrl}}/api/reservations/{{fullRes.response.body.id}}/cancel
 Authorization: Bearer {{customer.response.body.token}}
 
-### C6) Check-in deneme (müşteri) → 403
-PATCH {{baseUrl}}/api/reservations/{{myRes.response.body.id}}/check-in
+### C5) Ödeme → status: refunded, refundAmount: 6000
+GET {{baseUrl}}/api/reservations/{{fullRes.response.body.id}}/payment
 Authorization: Bearer {{customer.response.body.token}}
 
-### C7) Kendi rezervasyonunu iptal → 200, cancelled
-PATCH {{baseUrl}}/api/reservations/{{myRes.response.body.id}}/cancel
+
+# ============ H) YARIM İADE AKIŞI (girişe 3 gün) ============
+
+### H1) Rezervasyon (oda 104) → 201 (aynı gün tekrar 409)
+# @name halfRes
+POST {{baseUrl}}/api/reservations
+Authorization: Bearer {{customer.response.body.token}}
+Content-Type: application/json
+
+{
+  "roomId": 4,
+  "checkInDate": "{{$localDatetime 'YYYY-MM-DD' 3 d}}",
+  "checkOutDate": "{{$localDatetime 'YYYY-MM-DD' 5 d}}",
+  "guestCount": 2
+}
+
+### H2) Ödeme → 201 (6.000 ₺)
+POST {{baseUrl}}/api/reservations/{{halfRes.response.body.id}}/payment
+Authorization: Bearer {{customer.response.body.token}}
+Content-Type: application/json
+
+{
+  "method": "card"
+}
+
+### H3) İptal önizleme → refundPercent: 50, refundAmount: 3000
+GET {{baseUrl}}/api/reservations/{{halfRes.response.body.id}}/cancellation-preview
+Authorization: Bearer {{customer.response.body.token}}
+
+### H4) İptal → 200
+PATCH {{baseUrl}}/api/reservations/{{halfRes.response.body.id}}/cancel
+Authorization: Bearer {{customer.response.body.token}}
+
+### H5) Ödeme → refundAmount: 3000
+GET {{baseUrl}}/api/reservations/{{halfRes.response.body.id}}/payment
 Authorization: Bearer {{customer.response.body.token}}
 
 
 # ============ D) ADMIN ============
 
-### D1) Tüm rezervasyonlar → 200
-GET {{baseUrl}}/api/reservations
-Authorization: Bearer {{admin.response.body.token}}
-
-### D2) Ayşe'nin rezervasyonları → 200
-GET {{baseUrl}}/api/reservations/user/2
-Authorization: Bearer {{admin.response.body.token}}
-
-### D3) Müşterinin rezervasyonunu görüntüle → 200
-GET {{baseUrl}}/api/reservations/{{myRes.response.body.id}}
-Authorization: Bearer {{admin.response.body.token}}
-
-### D4) Oda ekle (601) → 201 (ikinci kez 409, normal)
-POST {{baseUrl}}/api/rooms
-Authorization: Bearer {{admin.response.body.token}}
-Content-Type: application/json
-
-{
-  "roomNumber": "601",
-  "roomTypeId": 2,
-  "floor": 6
-}
-
-### D5) Gelecek tarihli rezervasyona check-in → 400 (kural)
-PATCH {{baseUrl}}/api/reservations/1/check-in
-Authorization: Bearer {{admin.response.body.token}}
-
-
-# ============ S) GÜVENLİK ============
-
-### S1) Token olmadan rezervasyon → 401
-POST {{baseUrl}}/api/reservations
-Content-Type: application/json
-
-{
-  "roomId": 3,
-  "checkInDate": "2027-06-01",
-  "checkOutDate": "2027-06-03",
-  "guestCount": 1
-}
-
-### S2) Sahte token → 401
-GET {{baseUrl}}/api/reservations/my
-Authorization: Bearer bu.sahte.token
-
-
-
-# ============ E) DASHBOARD ============
-# Önce A1 ve A3'ü çalıştırmış olmalısın
-
-### E1) Dashboard (admin) → 200
+### D1) Dashboard → activeRooms: 300, occupiedRooms: 1, inHouseCount: 1
 GET {{baseUrl}}/api/admin/dashboard
 Authorization: Bearer {{admin.response.body.token}}
 
-### E2) Dashboard (müşteri) → 403
-GET {{baseUrl}}/api/admin/dashboard
+### D2) Ödeme bekleyen (Elif #3) iptal önizleme — admin → 100, iade 0 (ödeme yok)
+GET {{baseUrl}}/api/reservations/3/cancellation-preview
+Authorization: Bearer {{admin.response.body.token}}
+
+### D3) Otelde olan (Ayşe #2) iptal önizleme → cancellable: false
+GET {{baseUrl}}/api/reservations/2/cancellation-preview
+Authorization: Bearer {{admin.response.body.token}}
+
+### D4) Başkasının rezervasyonu (Ayşe #1) — Elif → 403
+GET {{baseUrl}}/api/reservations/1/cancellation-preview
 Authorization: Bearer {{customer.response.body.token}}
-
-### E3) Müşteri: BUGÜN başlayan rezervasyon (oda 202) → 201 (aynı gün tekrar 409)
-# @name todayStay
-POST {{baseUrl}}/api/reservations
-Authorization: Bearer {{customer.response.body.token}}
-Content-Type: application/json
-
-{
-  "roomId": 5,
-  "checkInDate": "{{$localDatetime 'YYYY-MM-DD'}}",
-  "checkOutDate": "{{$localDatetime 'YYYY-MM-DD' 3 d}}",
-  "guestCount": 2
-}
-
-### E4) Müşteri öder → 201
-POST {{baseUrl}}/api/reservations/{{todayStay.response.body.id}}/payment
-Authorization: Bearer {{customer.response.body.token}}
-Content-Type: application/json
-
-{
-  "method": "card"
-}
-
-### E5) Dashboard → arrivalsToday'de 202 görünmeli, occupiedRooms arttı, gelir arttı
-GET {{baseUrl}}/api/admin/dashboard
-Authorization: Bearer {{admin.response.body.token}}
-
-### E6) Admin check-in → 200
-PATCH {{baseUrl}}/api/reservations/{{todayStay.response.body.id}}/check-in
-Authorization: Bearer {{admin.response.body.token}}
-
-### E7) Dashboard → arrivalsToday boş, inHouseCount arttı
-GET {{baseUrl}}/api/admin/dashboard
-Authorization: Bearer {{admin.response.body.token}}
-
-
-
-# ============ F) CORS ============
-# Tarayıcının istekten önce gönderdiği "izin var mı?" sorusunu taklit eder
-
-### F1) Angular adresi → 200, cevapta "Access-Control-Allow-Origin: http://localhost:4200"
-OPTIONS {{baseUrl}}/api/room-types
-Origin: http://localhost:4200
-Access-Control-Request-Method: GET
-
-### F2) İzinsiz adres → 403
-OPTIONS {{baseUrl}}/api/room-types
-Origin: http://kotu-site.com
-Access-Control-Request-Method: GET
