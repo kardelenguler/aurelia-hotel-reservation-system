@@ -1,0 +1,60 @@
+### 1) BAŞARILI: Ayşe, oda 101, 3 gece → 201 Created, toplam 9000
+POST http://localhost:8080/api/reservations
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "roomId": 1,
+  "checkInDate": "2026-12-20",
+  "checkOutDate": "2026-12-23",
+  "guestCount": 2
+}
+
+### 2) ÇAKIŞMA: oda 201 zaten dolu → 409
+POST http://localhost:8080/api/reservations
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "roomId": 4,
+  "checkInDate": "2026-12-22",
+  "checkOutDate": "2026-12-26",
+  "guestCount": 2
+}
+
+### 3) KAPASİTE: oda 101 en fazla 2 kişi → 400
+POST http://localhost:8080/api/reservations
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "roomId": 2,
+  "checkInDate": "2027-01-10",
+  "checkOutDate": "2027-01-12",
+  "guestCount": 3
+}
+
+### 4) EKSİK ALAN: oda ve kişi sayısı yok → 400
+POST http://localhost:8080/api/reservations
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "checkInDate": "2027-01-10",
+  "checkOutDate": "2027-01-12"
+}
+
+### 5) OLMAYAN ODA → 404
+POST http://localhost:8080/api/reservations
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "roomId": 999,
+  "checkInDate": "2027-01-10",
+  "checkOutDate": "2027-01-12",
+  "guestCount": 1
+}
+
+### 6) Tüm rezervasyonları listele
+GET http://localhost:8080/api/reservations
