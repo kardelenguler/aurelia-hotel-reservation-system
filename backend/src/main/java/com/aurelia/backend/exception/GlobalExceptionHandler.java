@@ -24,11 +24,18 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    // Kural hataları (ör. tarih hatalı, kapasite aşıldı) → 400
+    // Kural hataları → 400
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Geçersiz istek: {}", ex.getMessage());
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    // Giriş yapılmamış / hatalı giriş → 401
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<Map<String, Object>> handleUnauthorized(UnauthorizedException ex) {
+        log.warn("Yetkisiz istek: {}", ex.getMessage());
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
     // Kayıt bulunamadı → 404
@@ -38,14 +45,14 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-    // Çakışma (ör. oda dolu) → 409
+    // Çakışma → 409
     @ExceptionHandler(ConflictException.class)
     public ResponseEntity<Map<String, Object>> handleConflict(ConflictException ex) {
         log.warn("Çakışma: {}", ex.getMessage());
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
-    // Veritabanı kuralı ihlali (ör. aynı anda iki kişi aynı odayı aldı) → 409
+    // Veritabanı kuralı ihlali → 409
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
         log.warn("Veritabanı kuralı ihlali: {}", ex.getMostSpecificCause().getMessage());
@@ -53,7 +60,7 @@ public class GlobalExceptionHandler {
                 "İşlem veritabanı kurallarına uymuyor. Lütfen bilgileri kontrol edin.");
     }
 
-    // @Valid kontrolleri (ör. boş alan) → 400
+    // @Valid kontrolleri → 400
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getFieldErrors().stream()
@@ -63,7 +70,7 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message);
     }
 
-    // Bozuk JSON veya yanlış tarih formatı → 400
+    // Bozuk JSON / yanlış tarih formatı → 400
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleUnreadable(HttpMessageNotReadableException ex) {
         log.warn("Okunamayan istek gövdesi: {}", ex.getMessage());

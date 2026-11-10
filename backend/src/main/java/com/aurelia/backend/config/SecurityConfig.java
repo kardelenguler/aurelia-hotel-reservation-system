@@ -2,6 +2,7 @@ package com.aurelia.backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,10 +17,12 @@ public class SecurityConfig {
         http
                 // REST API'de form kullanmadığımız için CSRF koruması gerekmiyor
                 .csrf(csrf -> csrf.disable())
-                // Oturum (session) tutmuyoruz; ileride her istekte token gelecek
+                // Oturum (session) tutmuyoruz; her istekte token gelecek
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // ŞİMDİLİK her şey açık — Adım 26'da kilitleyeceğiz
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                // İstekte "Authorization: Bearer <token>" varsa doğrula
+                .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))
                 // Tarayıcının açtığı varsayılan giriş pencerelerini kapat
                 .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable());

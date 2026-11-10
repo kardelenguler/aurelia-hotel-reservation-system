@@ -265,3 +265,46 @@ Content-Type: application/json
   "email": "test@aurelia.com",
   "password": "123"
 }
+
+
+
+# ============ GİRİŞ YAP + TOKEN ============
+
+### 35) Giriş yap → 200, token gelir
+# @name login
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "kardelen@aurelia.com",
+  "password": "Aurelia2026!"
+}
+
+### 36) Yanlış şifre → 401
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "kardelen@aurelia.com",
+  "password": "yanlisSifre123"
+}
+
+### 37) Olmayan e-posta → 401 (aynı mesaj)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "yok@aurelia.com",
+  "password": "Aurelia2026!"
+}
+
+### 38) Token ile "ben kimim?" → 200, senin bilgilerin
+GET http://localhost:8080/api/auth/me
+Authorization: Bearer {{login.response.body.token}}
+
+### 39) Token olmadan → 401
+GET http://localhost:8080/api/auth/me
+
+### 40) Sahte token → 401
+GET http://localhost:8080/api/auth/me
+Authorization: Bearer bu.sahte.token
