@@ -1,22 +1,23 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
+import { registerLocaleData } from '@angular/common';
+import localeTr from '@angular/common/locales/tr';
 
 import { routes } from './app.routes';
 
+// Türkçe tarih ve para formatı (ör. ₺3.000, 12 Ara 2026)
+registerLocaleData(localeTr);
+
 export const appConfig: ApplicationConfig = {
   providers: [
-    // Yakalanmayan hataları konsola düzgün yazar
     provideBrowserGlobalErrorListeners(),
-
-    // Sayfa yönlendirme
     provideRouter(
       routes,
-      withComponentInputBinding(),                              // URL parametrelerini bileşene otomatik aktarır
-      withInMemoryScrolling({ scrollPositionRestoration: 'top' }) // sayfa değişince en üste kaydır
+      withComponentInputBinding(),
+      withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' })
     ),
-
-    // Backend'e HTTP istekleri
-    provideHttpClient(withFetch())
+    provideHttpClient(withFetch()),
+    { provide: LOCALE_ID, useValue: 'tr' }
   ]
 };

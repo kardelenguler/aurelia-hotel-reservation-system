@@ -1,0 +1,252 @@
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="container hero-content">
+    <span class="eyebrow hero-eyebrow">AURELIA GRAND RESORT</span>
+    <h1>Hayalinizdeki Tatil,<br>Bir Adım Uzağınızda.</h1>
+    <p class="hero-text">
+      Belek'in eşsiz kıyılarında, beş yıldızlı her şey dahil konseptiyle
+      konfor, huzur ve ayrıcalığı bir arada yaşayın.
+    </p>
+    <button type="button" class="btn btn-light" (click)="scrollTo('about')">
+      <span class="play-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+      </span>
+      Otelimizi Keşfedin
+    </button>
+  </div>
+</section>
+
+<!-- ================= ARAMA KUTUSU ================= -->
+<section class="container search-wrapper">
+  <form class="search-card" [formGroup]="searchForm" (ngSubmit)="search()" novalidate>
+    <div class="search-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M3 10h18M8 3v4M16 3v4" />
+      </svg>
+      <span>Konaklamanızı<br>Planlayın</span>
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="checkIn">Giriş Tarihi</label>
+      <input
+        id="checkIn"
+        type="date"
+        class="form-input"
+        formControlName="checkIn"
+        [min]="today"
+        [class.is-invalid]="checkInError()">
+      @if (checkInError(); as error) {
+        <span class="form-error">{{ error }}</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="checkOut">Çıkış Tarihi</label>
+      <input
+        id="checkOut"
+        type="date"
+        class="form-input"
+        formControlName="checkOut"
+        [min]="searchForm.controls.checkIn.value || today"
+        [class.is-invalid]="checkOutError()">
+      @if (checkOutError(); as error) {
+        <span class="form-error">{{ error }}</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="adults">Yetişkin</label>
+      <input
+        id="adults"
+        type="number"
+        class="form-input"
+        formControlName="adults"
+        min="1"
+        max="10"
+        [class.is-invalid]="guestError()">
+    </div>
+
+    <div class="form-field">
+      <label class="form-label" for="children">Çocuk</label>
+      <input
+        id="children"
+        type="number"
+        class="form-input"
+        formControlName="children"
+        min="0"
+        max="10"
+        [class.is-invalid]="guestError()">
+    </div>
+
+    <button type="submit" class="btn btn-primary search-button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" width="18" height="18">
+        <circle cx="11" cy="11" r="7" />
+        <path d="M20 20l-3.5-3.5" />
+      </svg>
+      Müsait Odaları Ara
+    </button>
+
+    @if (guestError(); as error) {
+      <span class="form-error guest-error">{{ error }}</span>
+    }
+  </form>
+</section>
+
+<!-- ================= ÖNE ÇIKANLAR ================= -->
+<section class="container highlights">
+  @for (item of highlights; track item.title) {
+    <div class="highlight">
+      <span class="highlight-icon" aria-hidden="true">
+        @switch (item.icon) {
+          @case ('dining') {
+            <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M6 34h36M10 34a14 14 0 0 1 28 0M24 16v-4M21 12h6" />
+            </svg>
+          }
+          @case ('lotus') {
+            <svg viewBox="0 0 48 32" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M24 3c4.5 5.5 4.5 15 0 23c-4.5-8-4.5-17.5 0-23z" />
+              <path d="M24 26c-3-7.5-9-12.5-16.5-13.5c1 7.5 7.5 12.5 16.5 13.5z" />
+              <path d="M24 26c3-7.5 9-12.5 16.5-13.5c-1 7.5-7.5 12.5-16.5 13.5z" />
+            </svg>
+          }
+          @case ('waves') {
+            <svg viewBox="0 0 48 32" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M4 10c5-4 9-4 14 0s9 4 14 0s9-4 12 0M4 18c5-4 9-4 14 0s9 4 14 0s9-4 12 0M4 26c5-4 9-4 14 0s9 4 14 0s9-4 12 0" />
+            </svg>
+          }
+          @case ('spa') {
+            <svg viewBox="0 0 48 40" fill="none" stroke="currentColor" stroke-width="1.6">
+              <ellipse cx="24" cy="32" rx="16" ry="4" />
+              <ellipse cx="24" cy="24" rx="12" ry="4" />
+              <ellipse cx="24" cy="16" rx="8" ry="3.5" />
+              <path d="M24 12c0-4 3-6 6-7" />
+            </svg>
+          }
+        }
+      </span>
+      <div>
+        <h3 class="highlight-title">{{ item.title }}</h3>
+        <p class="highlight-text">{{ item.text }}</p>
+      </div>
+    </div>
+  }
+</section>
+
+<!-- ================= ODA TİPLERİ ================= -->
+<section class="section rooms-section">
+  <div class="container">
+    <div class="section-header">
+      <span class="eyebrow">Konaklama</span>
+      <h2>Oda Tiplerimiz</h2>
+    </div>
+
+    @if (loading()) {
+      <!-- Yükleniyor: iskelet kartlar -->
+      <div class="room-grid">
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="card room-card">
+            <div class="skeleton room-image-skeleton"></div>
+            <div class="room-body">
+              <div class="skeleton" style="height: 20px; width: 60%;"></div>
+              <div class="skeleton" style="height: 12px; width: 90%; margin-top: 12px;"></div>
+              <div class="skeleton" style="height: 12px; width: 40%; margin-top: 8px;"></div>
+              <div class="skeleton" style="height: 40px; margin-top: 24px;"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (loadError()) {
+      <!-- Hata durumu -->
+      <div class="card state-card">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="state-icon" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v6M12 16.5v.5" />
+        </svg>
+        <h3>Odalar şu anda yüklenemedi.</h3>
+        <p>Lütfen tekrar deneyin.</p>
+        <button type="button" class="btn btn-primary" (click)="loadRoomTypes()">Tekrar Dene</button>
+      </div>
+    } @else if (roomTypes().length === 0) {
+      <!-- Boş durum -->
+      <div class="card state-card">
+        <h3>Henüz oda tipi bulunmuyor.</h3>
+      </div>
+    } @else {
+      <!-- Oda kartları -->
+      <div class="room-grid">
+        @for (type of roomTypes(); track type.id) {
+          <article class="card room-card">
+            <div class="room-image">
+              @if (roomImage(type)) {
+                <img [src]="roomImage(type)" [alt]="type.name" loading="lazy" (error)="hideBrokenImage($event)">
+              }
+            </div>
+            <div class="room-body">
+              <h3>{{ type.name }}</h3>
+              <p class="room-desc">{{ type.description }}</p>
+              <p class="room-capacity">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+                </svg>
+                En fazla {{ type.capacity }} kişi
+              </p>
+              <div class="room-footer">
+                <p class="room-price">
+                  {{ type.pricePerNight | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }}
+                  <span>/ gece</span>
+                </p>
+                <a [routerLink]="['/rooms', type.id]" class="btn btn-outline btn-sm">Detayları Gör →</a>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<!-- ================= HAKKIMIZDA ================= -->
+<section class="section" id="about">
+  <div class="container about">
+    <div class="about-image">
+      <img src="/images/aurelia-about.jpg" alt="Aurelia Grand Resort genel görünüm" loading="lazy" (error)="hideBrokenImage($event)">
+    </div>
+    <div class="about-content">
+      <span class="eyebrow">AURELIA GRAND RESORT</span>
+      <h2>Hakkımızda</h2>
+      <p>
+        Antalya'nın eşsiz Belek kıyılarında konumlanan Aurelia Grand Resort, beş yıldızlı
+        her şey dahil konseptiyle misafirlerine konfor, huzur ve ayrıcalığı bir arada sunar.
+      </p>
+      <p>
+        Akdeniz'in büyüleyici manzarası, özenle tasarlanmış konaklama seçenekleri, deniz ve
+        havuz keyfi ile wellness olanaklarıyla unutulmaz bir tatilin kapılarını aralar.
+      </p>
+      <a routerLink="/about" class="btn btn-gold btn-sm">Daha Fazla →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GALERİ ================= -->
+<section class="section gallery-section">
+  <div class="container">
+    <div class="gallery-header">
+      <div>
+        <span class="eyebrow">Otelimizden Kareler</span>
+        <h2>Galeri</h2>
+      </div>
+      <a routerLink="/gallery" class="btn btn-outline btn-sm">Galeriyi Gör →</a>
+    </div>
+
+    <div class="gallery-grid">
+      @for (image of galleryImages; track image.src) {
+        <div class="gallery-item">
+          <img [src]="image.src" [alt]="image.alt" loading="lazy" (error)="hideBrokenImage($event)">
+        </div>
+      }
+    </div>
+  </div>
+</section>

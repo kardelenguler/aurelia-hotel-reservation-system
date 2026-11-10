@@ -1,0 +1,390 @@
+/* ================= HERO ================= */
+.hero {
+  position: relative;
+  min-height: 560px;
+  display: flex;
+  align-items: center;
+  padding-block: 80px 140px;
+  color: var(--color-white);
+  /* Görsel yoksa koyu deniz rengi görünür */
+  background:
+    linear-gradient(90deg, rgba(23, 61, 70, 0.75) 0%, rgba(23, 61, 70, 0.35) 55%, rgba(23, 61, 70, 0.1) 100%),
+    url('/images/aurelia-hero.jpg') center / cover no-repeat,
+    var(--color-ocean);
+}
+
+.hero-content {
+  max-width: var(--container-max);
+}
+
+.hero-eyebrow {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.hero h1 {
+  color: var(--color-white);
+  margin-top: 16px;
+  max-width: 640px;
+}
+
+.hero-text {
+  margin-top: 20px;
+  max-width: 480px;
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.hero .btn-light {
+  margin-top: 32px;
+  border-radius: 999px;
+  padding-left: 8px;
+}
+
+.play-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-gold);
+}
+
+.play-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ================= ARAMA KUTUSU ================= */
+.search-wrapper {
+  position: relative;
+  margin-top: -80px;
+  z-index: 2;
+}
+
+.search-card {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr 0.7fr 0.7fr auto;
+  align-items: start;
+  gap: 16px;
+  background: var(--color-white);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card-hover);
+  padding: 24px 28px;
+}
+
+.search-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  line-height: 1.25;
+  align-self: center;
+}
+
+.search-title svg {
+  width: 30px;
+  height: 30px;
+  color: var(--color-gold);
+  flex-shrink: 0;
+}
+
+.search-button {
+  margin-top: 27px; /* etiket yüksekliği kadar aşağı */
+}
+
+.guest-error {
+  grid-column: 1 / -1;
+}
+
+/* ================= ÖNE ÇIKANLAR ================= */
+.highlights {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  padding-block: 56px 24px;
+}
+
+.highlight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.highlight + .highlight {
+  border-left: 1px solid var(--color-border);
+  padding-left: 24px;
+}
+
+.highlight-icon {
+  color: var(--color-gold);
+  flex-shrink: 0;
+}
+
+.highlight-icon svg {
+  width: 44px;
+  height: 36px;
+}
+
+.highlight-title {
+  font-size: 1.05rem;
+}
+
+.highlight-text {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  margin-top: 2px;
+}
+
+/* ================= ODA TİPLERİ ================= */
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.room-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.room-card:hover {
+  transform: translateY(-4px);
+}
+
+.room-image {
+  aspect-ratio: 4 / 3;
+  /* Görsel yoksa bu yer tutucu görünür */
+  background: linear-gradient(135deg, var(--color-sand), var(--color-gold));
+}
+
+.room-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.room-image-skeleton {
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+}
+
+.room-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 20px;
+}
+
+.room-desc {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.room-capacity {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+}
+
+.room-capacity svg {
+  width: 18px;
+  height: 18px;
+  color: var(--color-gold-dark);
+}
+
+.room-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.room-price {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-gold-dark);
+}
+
+.room-price span {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+/* Hata / boş durum kartı */
+.state-card {
+  max-width: 440px;
+  margin-inline: auto;
+  padding: 40px 32px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.state-card p {
+  color: var(--color-muted);
+  margin-bottom: 16px;
+}
+
+.state-icon {
+  width: 48px;
+  height: 48px;
+  color: var(--color-error);
+}
+
+/* ================= HAKKIMIZDA ================= */
+.about {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 56px;
+  align-items: center;
+}
+
+.about-image {
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--color-sand), var(--color-gold));
+}
+
+.about-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.about-content h2 {
+  margin-top: 8px;
+}
+
+.about-content p {
+  margin-top: 16px;
+  color: var(--color-muted);
+}
+
+.about-content .btn {
+  margin-top: 24px;
+}
+
+/* ================= GALERİ ================= */
+.gallery-section {
+  padding-top: 0;
+}
+
+.gallery-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.gallery-header h2 {
+  margin-top: 4px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.gallery-item {
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--color-sand), var(--color-teal));
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition);
+}
+
+.gallery-item:hover img {
+  transform: scale(1.04);
+}
+
+/* ================= TABLET ================= */
+@media (max-width: 1100px) {
+  .search-card {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .search-title {
+    grid-column: 1 / -1;
+  }
+
+  .search-button {
+    grid-column: 1 / -1;
+    margin-top: 8px;
+  }
+
+  .highlights,
+  .room-grid,
+  .gallery-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .highlight:nth-child(3) {
+    border-left: none;
+    padding-left: 0;
+  }
+}
+
+/* ================= MOBİL ================= */
+@media (max-width: 640px) {
+  .hero {
+    min-height: 460px;
+    padding-block: 56px 120px;
+  }
+
+  .search-card {
+    grid-template-columns: 1fr 1fr;
+    padding: 20px;
+  }
+
+  .search-card .form-field:nth-of-type(1),
+  .search-card .form-field:nth-of-type(2) {
+    grid-column: 1 / -1;
+  }
+
+  .highlights {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .highlight {
+    flex-direction: column;
+    text-align: center;
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+
+  .room-grid,
+  .about {
+    grid-template-columns: 1fr;
+  }
+
+  .gallery-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .gallery-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
