@@ -154,3 +154,50 @@ Content-Type: application/json
 ### S2) Sahte token → 401
 GET {{baseUrl}}/api/reservations/my
 Authorization: Bearer bu.sahte.token
+
+
+
+# ============ E) DASHBOARD ============
+# Önce A1 ve A3'ü çalıştırmış olmalısın
+
+### E1) Dashboard (admin) → 200
+GET {{baseUrl}}/api/admin/dashboard
+Authorization: Bearer {{admin.response.body.token}}
+
+### E2) Dashboard (müşteri) → 403
+GET {{baseUrl}}/api/admin/dashboard
+Authorization: Bearer {{customer.response.body.token}}
+
+### E3) Müşteri: BUGÜN başlayan rezervasyon (oda 202) → 201 (aynı gün tekrar 409)
+# @name todayStay
+POST {{baseUrl}}/api/reservations
+Authorization: Bearer {{customer.response.body.token}}
+Content-Type: application/json
+
+{
+  "roomId": 5,
+  "checkInDate": "{{$localDatetime 'YYYY-MM-DD'}}",
+  "checkOutDate": "{{$localDatetime 'YYYY-MM-DD' 3 d}}",
+  "guestCount": 2
+}
+
+### E4) Müşteri öder → 201
+POST {{baseUrl}}/api/reservations/{{todayStay.response.body.id}}/payment
+Authorization: Bearer {{customer.response.body.token}}
+Content-Type: application/json
+
+{
+  "method": "card"
+}
+
+### E5) Dashboard → arrivalsToday'de 202 görünmeli, occupiedRooms arttı, gelir arttı
+GET {{baseUrl}}/api/admin/dashboard
+Authorization: Bearer {{admin.response.body.token}}
+
+### E6) Admin check-in → 200
+PATCH {{baseUrl}}/api/reservations/{{todayStay.response.body.id}}/check-in
+Authorization: Bearer {{admin.response.body.token}}
+
+### E7) Dashboard → arrivalsToday boş, inHouseCount arttı
+GET {{baseUrl}}/api/admin/dashboard
+Authorization: Bearer {{admin.response.body.token}}

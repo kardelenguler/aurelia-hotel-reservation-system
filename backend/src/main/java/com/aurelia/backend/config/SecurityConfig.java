@@ -33,6 +33,7 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
 
                         // 🛎️ Sadece admin
+                        .requestMatchers("/api/admin/**").hasRole("admin")
                         .requestMatchers("/api/rooms", "/api/rooms/**").hasRole("admin")
                         .requestMatchers(HttpMethod.GET, "/api/reservations").hasRole("admin")
                         .requestMatchers("/api/reservations/user/**").hasRole("admin")
@@ -66,7 +67,7 @@ public class SecurityConfig {
         return converter;
     }
 
-    // Token yok / geçersiz / süresi dolmuş → 401 (bizim JSON formatımızda)
+    // Token yok / geçersiz / süresi dolmuş → 401
     private AuthenticationEntryPoint authenticationEntryPoint() {
         return (request, response, authException) -> writeJson(response, 401, "Unauthorized",
                 "Bu işlem için giriş yapmanız gerekiyor. Token eksik, geçersiz veya süresi dolmuş.");

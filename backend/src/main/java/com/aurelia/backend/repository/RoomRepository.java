@@ -13,6 +13,9 @@ public interface RoomRepository extends JpaRepository<Room, Integer> {
     // Sadece aktif odaları getir
     List<Room> findByIsActiveTrue();
 
+    // Aktif oda sayısı (dashboard)
+    long countByIsActiveTrue();
+
     // Bu oda numarası kullanılıyor mu? (yeni oda eklerken)
     boolean existsByRoomNumber(String roomNumber);
 
