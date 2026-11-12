@@ -6,15 +6,10 @@
   align-items: center;
   padding-block: 80px 140px;
   color: var(--color-white);
-  /* Görsel yoksa koyu deniz rengi görünür */
   background:
     linear-gradient(90deg, rgba(23, 61, 70, 0.75) 0%, rgba(23, 61, 70, 0.35) 55%, rgba(23, 61, 70, 0.1) 100%),
     url('/images/aurelia-hero.jpg') center / cover no-repeat,
     var(--color-ocean);
-}
-
-.hero-content {
-  max-width: var(--container-max);
 }
 
 .hero-eyebrow {
@@ -55,47 +50,11 @@
   height: 14px;
 }
 
-/* ================= ARAMA KUTUSU ================= */
+/* ================= ARAMA KUTUSU KONUMU ================= */
 .search-wrapper {
   position: relative;
   margin-top: -80px;
   z-index: 2;
-}
-
-.search-card {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr 1fr 0.7fr 0.7fr auto;
-  align-items: start;
-  gap: 16px;
-  background: var(--color-white);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card-hover);
-  padding: 24px 28px;
-}
-
-.search-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--font-heading);
-  font-size: 1.15rem;
-  line-height: 1.25;
-  align-self: center;
-}
-
-.search-title svg {
-  width: 30px;
-  height: 30px;
-  color: var(--color-gold);
-  flex-shrink: 0;
-}
-
-.search-button {
-  margin-top: 27px; /* etiket yüksekliği kadar aşağı */
-}
-
-.guest-error {
-  grid-column: 1 / -1;
 }
 
 /* ================= ÖNE ÇIKANLAR ================= */
@@ -155,7 +114,6 @@
 
 .room-image {
   aspect-ratio: 4 / 3;
-  /* Görsel yoksa bu yer tutucu görünür */
   background: linear-gradient(135deg, var(--color-sand), var(--color-gold));
 }
 
@@ -220,7 +178,6 @@
   color: var(--color-muted);
 }
 
-/* Hata / boş durum kartı */
 .state-card {
   max-width: 440px;
   margin-inline: auto;
@@ -320,19 +277,6 @@
 
 /* ================= TABLET ================= */
 @media (max-width: 1100px) {
-  .search-card {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .search-title {
-    grid-column: 1 / -1;
-  }
-
-  .search-button {
-    grid-column: 1 / -1;
-    margin-top: 8px;
-  }
-
   .highlights,
   .room-grid,
   .gallery-grid {
@@ -350,16 +294,6 @@
   .hero {
     min-height: 460px;
     padding-block: 56px 120px;
-  }
-
-  .search-card {
-    grid-template-columns: 1fr 1fr;
-    padding: 20px;
-  }
-
-  .search-card .form-field:nth-of-type(1),
-  .search-card .form-field:nth-of-type(2) {
-    grid-column: 1 / -1;
   }
 
   .highlights {
