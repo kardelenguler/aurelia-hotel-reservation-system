@@ -36,7 +36,7 @@
         @if (auth.isLoggedIn()) {
           <a routerLink="/customer/reservations" (click)="closeAll()">Rezervasyonlarım</a>
           <a routerLink="/customer/dashboard" (click)="closeAll()">Hesabım</a>
-          @if (auth.isAdmin()) {
+          @if (auth.isStaff()) {
             <a routerLink="/admin/dashboard" (click)="closeAll()">Yönetim Paneli</a>
           }
           <button type="button" class="btn btn-outline btn-block" (click)="logout()">Çıkış Yap</button>
@@ -79,7 +79,7 @@
           @if (userMenuOpen()) {
             <div class="dropdown" role="menu">
               <a routerLink="/customer/dashboard" role="menuitem" (click)="closeAll()">Hesabım</a>
-              @if (auth.isAdmin()) {
+              @if (auth.isStaff()) {
                 <a routerLink="/admin/dashboard" role="menuitem" (click)="closeAll()">Yönetim Paneli</a>
               }
               <button type="button" role="menuitem" (click)="logout()">Çıkış Yap</button>

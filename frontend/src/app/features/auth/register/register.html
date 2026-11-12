@@ -1,0 +1,119 @@
+<section class="auth-page">
+  <div class="auth-visual">
+    <div>
+      <span class="eyebrow">AURELIA GRAND RESORT</span>
+      <h2>Unutulmaz bir tatil için ilk adım.</h2>
+      <p>Hesap oluşturarak rezervasyon yapabilir, rezervasyonlarınızı tek yerden yönetebilirsiniz.</p>
+    </div>
+  </div>
+
+  <div class="auth-panel">
+    <div class="auth-card">
+      <svg class="auth-logo" viewBox="0 0 48 32" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+        <path d="M24 3c4.5 5.5 4.5 15 0 23c-4.5-8-4.5-17.5 0-23z" />
+        <path d="M24 26c-3-7.5-9-12.5-16.5-13.5c1 7.5 7.5 12.5 16.5 13.5z" />
+        <path d="M24 26c3-7.5 9-12.5 16.5-13.5c-1 7.5-7.5 12.5-16.5 13.5z" />
+        <path d="M24 26c-6-2.5-13.5-2.5-21 1c6.5 3.5 14 3.5 21-1z" />
+        <path d="M24 26c6-2.5 13.5-2.5 21 1c-6.5 3.5-14 3.5-21-1z" />
+      </svg>
+
+      <h1>Hesap Oluşturun</h1>
+      <p class="auth-subtitle">Birkaç saniyede kaydolun, tatilinizi planlamaya başlayın.</p>
+
+      @if (errorMessage(); as error) {
+        <div class="alert alert-error" role="alert">{{ error }}</div>
+      }
+
+      <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label" for="firstName">Ad</label>
+            <input id="firstName" type="text" class="form-input" formControlName="firstName"
+                   autocomplete="given-name" [class.is-invalid]="fieldError('firstName')">
+            @if (fieldError('firstName'); as error) {
+              <span class="form-error">{{ error }}</span>
+            }
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="lastName">Soyad</label>
+            <input id="lastName" type="text" class="form-input" formControlName="lastName"
+                   autocomplete="family-name" [class.is-invalid]="fieldError('lastName')">
+            @if (fieldError('lastName'); as error) {
+              <span class="form-error">{{ error }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="email">E-posta</label>
+          <input id="email" type="email" class="form-input" formControlName="email"
+                 autocomplete="email" placeholder="ornek@eposta.com" [class.is-invalid]="fieldError('email')">
+          @if (fieldError('email'); as error) {
+            <span class="form-error">{{ error }}</span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="password">Şifre</label>
+          <div class="password-wrapper">
+            <input id="password" [type]="showPassword() ? 'text' : 'password'" class="form-input"
+                   formControlName="password" autocomplete="new-password" [class.is-invalid]="fieldError('password')">
+            <button type="button" class="toggle-password" (click)="togglePassword()"
+                    [attr.aria-label]="showPassword() ? 'Şifreyi gizle' : 'Şifreyi göster'">
+              @if (showPassword()) {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                  <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A9.8 9.8 0 0 1 12 5c5 0 9 4.5 10 7a12.6 12.6 0 0 1-3.2 4.2M6.6 6.6A12.4 12.4 0 0 0 2 12c1 2.5 5 7 10 7a9.6 9.6 0 0 0 4.3-1" />
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                  <path d="M2 12c1-2.5 5-7 10-7s9 4.5 10 7c-1 2.5-5 7-10 7s-9-4.5-10-7z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              }
+            </button>
+          </div>
+          @if (fieldError('password'); as error) {
+            <span class="form-error">{{ error }}</span>
+          } @else {
+            <span class="form-hint">En az 8 karakter, en az bir harf ve bir rakam.</span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="confirmPassword">Şifre Tekrar</label>
+          <input id="confirmPassword" [type]="showPassword() ? 'text' : 'password'" class="form-input"
+                 formControlName="confirmPassword" autocomplete="new-password"
+                 [class.is-invalid]="fieldError('confirmPassword')">
+          @if (fieldError('confirmPassword'); as error) {
+            <span class="form-error">{{ error }}</span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label class="checkbox">
+            <input type="checkbox" formControlName="terms">
+            <span>Kullanım koşullarını ve gizlilik politikasını okudum, kabul ediyorum.</span>
+          </label>
+          @if (fieldError('terms'); as error) {
+            <span class="form-error">{{ error }}</span>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-gold btn-block" [disabled]="loading()">
+          @if (loading()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Hesap oluşturuluyor...
+          } @else {
+            Kayıt Ol
+          }
+        </button>
+      </form>
+
+      <p class="auth-switch">
+        Zaten hesabınız var mı?
+        <a routerLink="/login" [queryParams]="{ returnUrl: returnUrl() }">Giriş Yapın</a>
+      </p>
+    </div>
+  </div>
+</section>
