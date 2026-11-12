@@ -6,6 +6,7 @@ import com.aurelia.backend.entity.ReservationStatus;
 import com.aurelia.backend.repository.PaymentRepository;
 import com.aurelia.backend.repository.ReservationRepository;
 import com.aurelia.backend.repository.RoomRepository;
+import com.aurelia.backend.security.AuthUser;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -29,7 +30,7 @@ public class DashboardService {
         this.paymentRepository = paymentRepository;
     }
 
-    public DashboardResponse getDashboard() {
+    public DashboardResponse getDashboard(AuthUser authUser) {
         LocalDate today = LocalDate.now();
 
         // Doluluk
@@ -43,12 +44,14 @@ public class DashboardService {
         long inHouseCount = reservationRepository.countByStatus(ReservationStatus.CHECKED_IN);
         long pendingPaymentCount = reservationRepository.countByStatus(ReservationStatus.PENDING);
 
-        // Bu ayın geliri: ayın 1'i 00:00 → sonraki ayın 1'i 00:00
-        OffsetDateTime monthStart = today.withDayOfMonth(1)
-                .atStartOfDay(ZoneId.systemDefault())
-                .toOffsetDateTime();
-        OffsetDateTime nextMonthStart = monthStart.plusMonths(1);
-        BigDecimal revenueThisMonth = paymentRepository.sumPaidBetween(monthStart, nextMonthStart);
+        // Gelir sadece yöneticiye gösterilir; resepsiyon için null
+        BigDecimal revenueThisMonth = null;
+        if (authUser.isAdmin()) {
+            OffsetDateTime monthStart = today.withDayOfMonth(1)
+                    .atStartOfDay(ZoneId.systemDefault())
+                    .toOffsetDateTime();
+            revenueThisMonth = paymentRepository.sumPaidBetween(monthStart, monthStart.plusMonths(1));
+        }
 
         // Bugünkü listeler
         List<Reservation> arrivals = reservationRepository.findArrivals(today);

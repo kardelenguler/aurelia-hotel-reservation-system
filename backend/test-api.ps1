@@ -33,7 +33,7 @@ function Call($method, $path, $token, $body) {
         if ($_.Exception.Response) {
             return @{ Status = [int]$_.Exception.Response.StatusCode; Body = $null }
         }
-        Write-Host "[HATA] Backend'e ulaşılamadı. Çalışıyor mu? ($base)" -ForegroundColor Red
+        Write-Host "[HATA] Backend'e ulasilamadi. Calisiyor mu? ($base)" -ForegroundColor Red
         exit 1
     }
 }
@@ -53,12 +53,16 @@ function Day($offset) { return (Get-Date).AddDays($offset).ToString("yyyy-MM-dd"
 # ---------- A) GİRİŞ ----------
 Write-Host "`n--- A) GIRIS ---" -ForegroundColor Cyan
 $admin = Call "POST" "/api/auth/login" $null @{ email = "kardelen@aurelia.com"; password = "Aurelia2026!" }
-Check "A1 Admin girisi" ($admin.Status -eq 200 -and $admin.Body.role -eq "admin") "status=$($admin.Status)"
+Check "A1 Yonetici girisi" ($admin.Status -eq 200 -and $admin.Body.role -eq "admin") "status=$($admin.Status)"
 $adminToken = $admin.Body.token
 
 $cust = Call "POST" "/api/auth/login" $null @{ email = "elif@example.com"; password = "Musteri2026!" }
-Check "A3 Musteri girisi" ($cust.Status -eq 200 -and $cust.Body.role -eq "customer") "status=$($cust.Status)"
+Check "A2 Musteri girisi" ($cust.Status -eq 200 -and $cust.Body.role -eq "customer") "status=$($cust.Status)"
 $custToken = $cust.Body.token
+
+$recep = Call "POST" "/api/auth/login" $null @{ email = "resepsiyon@aurelia.com"; password = "Resepsiyon2026!" }
+Check "A3 Resepsiyon girisi" ($recep.Status -eq 200 -and $recep.Body.role -eq "receptionist") "status=$($recep.Status), rol=$($recep.Body.role)"
+$recepToken = $recep.Body.token
 
 # ---------- P) HERKESE AÇIK ----------
 Write-Host "`n--- P) HERKESE ACIK ---" -ForegroundColor Cyan
@@ -117,10 +121,10 @@ Check "H4 Iptal -> cancelled" ($h4.Status -eq 200 -and $h4.Body.status -eq "canc
 $h5 = Call "GET" "/api/reservations/$resH/payment" $custToken $null
 Check "H5 Odeme -> refunded, 3000" ($h5.Body.status -eq "refunded" -and $h5.Body.refundAmount -eq 3000) "durum=$($h5.Body.status), iade=$($h5.Body.refundAmount)"
 
-# ---------- D) ADMIN ----------
-Write-Host "`n--- D) ADMIN ---" -ForegroundColor Cyan
+# ---------- D) YÖNETİCİ ----------
+Write-Host "`n--- D) YONETICI ---" -ForegroundColor Cyan
 $d1 = Call "GET" "/api/admin/dashboard" $adminToken $null
-Check "D1 Dashboard -> 300 oda, otelde >= 1" ($d1.Status -eq 200 -and $d1.Body.activeRooms -eq 300 -and $d1.Body.inHouseCount -ge 1) "oda=$($d1.Body.activeRooms), otelde=$($d1.Body.inHouseCount)"
+Check "D1 Dashboard -> 300 oda, gelir gorunur" ($d1.Status -eq 200 -and $d1.Body.activeRooms -eq 300 -and $null -ne $d1.Body.revenueThisMonth) "oda=$($d1.Body.activeRooms), gelir=$($d1.Body.revenueThisMonth)"
 Write-Host "       Bu ayin net geliri: $($d1.Body.revenueThisMonth) TL" -ForegroundColor Gray
 
 $d2 = Call "GET" "/api/reservations/3/cancellation-preview" $adminToken $null
@@ -130,7 +134,27 @@ $d3 = Call "GET" "/api/reservations/2/cancellation-preview" $adminToken $null
 Check "D3 Oteldeki misafir -> iptal edilemez" ($d3.Body.cancellable -eq $false) "iptal=$($d3.Body.cancellable)"
 
 $d4 = Call "GET" "/api/reservations/1/cancellation-preview" $custToken $null
-Check "D4 Baskasinin rezervasyonu -> 403" ($d4.Status -eq 403) "status=$($d4.Status)"
+Check "D4 Baskasinin rezervasyonu (musteri) -> 403" ($d4.Status -eq 403) "status=$($d4.Status)"
+
+# ---------- R) RESEPSİYON ----------
+Write-Host "`n--- R) RESEPSIYON ---" -ForegroundColor Cyan
+$r1 = Call "GET" "/api/admin/dashboard" $recepToken $null
+Check "R1 Dashboard -> acik, gelir GIZLI" ($r1.Status -eq 200 -and $null -eq $r1.Body.revenueThisMonth) "status=$($r1.Status), gelir=$($r1.Body.revenueThisMonth)"
+
+$r2 = Call "GET" "/api/reservations" $recepToken $null
+Check "R2 Tum rezervasyonlar -> 200" ($r2.Status -eq 200) "status=$($r2.Status)"
+
+$r3 = Call "GET" "/api/reservations/1" $recepToken $null
+Check "R3 Misafirin rezervasyonunu gorme -> 200" ($r3.Status -eq 200) "status=$($r3.Status)"
+
+$r4 = Call "GET" "/api/rooms" $recepToken $null
+Check "R4 Oda listesi -> 200" ($r4.Status -eq 200) "status=$($r4.Status)"
+
+$r5 = Call "POST" "/api/rooms" $recepToken @{ roomNumber = "9999"; roomTypeId = 1; floor = 1 }
+Check "R5 Oda ekleme -> 403 (sadece yonetici)" ($r5.Status -eq 403) "status=$($r5.Status)"
+
+$r6 = Call "PATCH" "/api/rooms/1/deactivate" $recepToken $null
+Check "R6 Oda pasife alma -> 403 (sadece yonetici)" ($r6.Status -eq 403) "status=$($r6.Status)"
 
 # ---------- SONUÇ ----------
 Write-Host "`n=====================================" -ForegroundColor Cyan

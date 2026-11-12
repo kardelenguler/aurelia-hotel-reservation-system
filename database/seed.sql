@@ -44,9 +44,10 @@ ORDER BY no;
 -- ---------- Kullanıcılar (giriş yapılabilir test hesapları) ----------
 -- Sadece geliştirme için test şifreleri
 INSERT INTO users (full_name, email, password_hash, role) VALUES
-('Kardelen Güler', 'kardelen@aurelia.com', crypt('Aurelia2026!', gen_salt('bf', 10)), 'admin'),
-('Ayşe Yılmaz',    'ayse@example.com',     crypt('Musteri2026!', gen_salt('bf', 10)), 'customer'),
-('Elif Demir',     'elif@example.com',     crypt('Musteri2026!', gen_salt('bf', 10)), 'customer');
+('Kardelen Güler', 'kardelen@aurelia.com',   crypt('Aurelia2026!',    gen_salt('bf', 10)), 'admin'),
+('Ayşe Yılmaz',    'ayse@example.com',       crypt('Musteri2026!',    gen_salt('bf', 10)), 'customer'),
+('Elif Demir',     'elif@example.com',       crypt('Musteri2026!',    gen_salt('bf', 10)), 'customer'),
+('Mert Aydın',     'resepsiyon@aurelia.com', crypt('Resepsiyon2026!', gen_salt('bf', 10)), 'receptionist');
 
 -- ---------- Örnek rezervasyonlar (tarihler bugüne göre) ----------
 INSERT INTO reservations (user_id, room_id, check_in_date, check_out_date, guest_count, total_price, status) VALUES

@@ -26,11 +26,14 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
+    // Rol adları (token'daki "role" → ROLE_ öneki ile)
+    private static final String ADMIN = "admin";
+    private static final String RECEPTIONIST = "receptionist";
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
-                // CORS: aşağıdaki corsConfigurationSource ayarlarını kullan
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
@@ -40,14 +43,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/rooms/*").permitAll() // active, available, {id}
                         .requestMatchers("/error").permitAll()
 
-                        // 🛎️ Sadece admin
-                        .requestMatchers("/api/admin/**").hasRole("admin")
-                        .requestMatchers("/api/rooms", "/api/rooms/**").hasRole("admin")
-                        .requestMatchers(HttpMethod.GET, "/api/reservations").hasRole("admin")
-                        .requestMatchers("/api/reservations/user/**").hasRole("admin")
+                        // 🛎️ Personel (resepsiyon + yönetici)
+                        .requestMatchers(HttpMethod.GET, "/api/rooms").hasAnyRole(ADMIN, RECEPTIONIST)
+                        .requestMatchers("/api/admin/**").hasAnyRole(ADMIN, RECEPTIONIST)
+                        .requestMatchers(HttpMethod.GET, "/api/reservations").hasAnyRole(ADMIN, RECEPTIONIST)
+                        .requestMatchers("/api/reservations/user/**").hasAnyRole(ADMIN, RECEPTIONIST)
                         .requestMatchers(HttpMethod.PATCH,
                                 "/api/reservations/*/check-in",
-                                "/api/reservations/*/check-out").hasRole("admin")
+                                "/api/reservations/*/check-out").hasAnyRole(ADMIN, RECEPTIONIST)
+
+                        // 👔 Sadece yönetici: oda ekleme / düzenleme / aktif-pasif
+                        .requestMatchers("/api/rooms", "/api/rooms/**").hasRole(ADMIN)
 
                         // 👤 Geri kalan her şey: giriş yapmış kullanıcı
                         .anyRequest().authenticated())
@@ -72,7 +78,7 @@ public class SecurityConfig {
         config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        config.setMaxAge(3600L); // tarayıcı bu izni 1 saat hatırlasın
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", config);

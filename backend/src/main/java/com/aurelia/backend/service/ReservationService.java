@@ -55,12 +55,12 @@ public class ReservationService {
 
     // ---------- Okuma ----------
 
-    // Admin: tüm rezervasyonlar
+    // Personel: tüm rezervasyonlar
     public List<Reservation> getAllReservations() {
         return reservationRepository.findAll();
     }
 
-    // Admin: bir kullanıcının rezervasyonları
+    // Personel: bir kullanıcının rezervasyonları
     public List<Reservation> getReservationsByUser(Integer userId) {
         return reservationRepository.findByUserIdOrderByCheckInDateDesc(userId);
     }
@@ -70,10 +70,10 @@ public class ReservationService {
         return reservationRepository.findByUserIdOrderByCheckInDateDesc(authUser.id());
     }
 
-    // Tek rezervasyon: sahibi veya admin görebilir
+    // Tek rezervasyon: sahibi veya personel görebilir
     public Reservation getReservationForUser(Integer id, AuthUser authUser) {
         Reservation reservation = findReservation(id);
-        ensureOwnerOrAdmin(reservation, authUser);
+        ensureOwnerOrStaff(reservation, authUser);
         return reservation;
     }
 
@@ -171,7 +171,7 @@ public class ReservationService {
             }
         });
 
-        log.info("Rezervasyon iptal edildi: id={}, işlemi yapan={}", id, authUser.id());
+        log.info("Rezervasyon iptal edildi: id={}, işlemi yapan={} ({})", id, authUser.id(), authUser.role());
         return reservation;
     }
 
@@ -220,7 +220,7 @@ public class ReservationService {
         return new CancellationPreview(false, days, 0, paidAmount, BigDecimal.ZERO, message);
     }
 
-    // ---------- Check-in / Check-out (admin) ----------
+    // ---------- Check-in / Check-out (personel) ----------
 
     @Transactional
     public Reservation checkIn(Integer id) {
@@ -265,9 +265,10 @@ public class ReservationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Rezervasyon bulunamadı (id: " + id + ")."));
     }
 
-    private void ensureOwnerOrAdmin(Reservation reservation, AuthUser authUser) {
+    // Rezervasyonu sadece sahibi veya otel personeli görebilir / iptal edebilir
+    private void ensureOwnerOrStaff(Reservation reservation, AuthUser authUser) {
         boolean isOwner = reservation.getUser().getId().equals(authUser.id());
-        if (!isOwner && !authUser.isAdmin()) {
+        if (!isOwner && !authUser.isStaff()) {
             throw new ForbiddenException("Bu rezervasyona erişim yetkiniz yok.");
         }
     }

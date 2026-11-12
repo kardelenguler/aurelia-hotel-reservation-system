@@ -7,9 +7,11 @@ CREATE TABLE users (
     full_name VARCHAR(100) NOT NULL CHECK (TRIM(full_name) <> ''),
     email VARCHAR(255) NOT NULL UNIQUE CHECK (TRIM(email) <> ''),
     password_hash TEXT NOT NULL,
-    role VARCHAR(20) NOT NULL DEFAULT 'customer'
-        CHECK (role IN ('customer', 'admin')),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    role VARCHAR(20) NOT NULL DEFAULT 'customer',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- customer = müşteri, receptionist = resepsiyon, admin = yönetici
+    CONSTRAINT users_role_check CHECK (role IN ('customer', 'receptionist', 'admin'))
 );
 
 -- 2. Oda tipleri
