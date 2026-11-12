@@ -6,6 +6,7 @@ import { Login } from './features/auth/login/login';
 import { Register } from './features/auth/register/register';
 import { Booking } from './features/booking/booking';
 import { PaymentPage } from './features/payment/payment';
+import { MyReservations } from './features/reservations/my-reservations';
 import { authGuard, guestGuard } from './core/guards/auth.guards';
 
 export const routes: Routes = [
@@ -22,7 +23,8 @@ export const routes: Routes = [
 
       // Sadece giriş yapmış kullanıcılar
       { path: 'customer/booking', component: Booking, canActivate: [authGuard], title: 'Rezervasyon | Aurelia Grand Resort' },
-      { path: 'customer/payment/:reservationId', component: PaymentPage, canActivate: [authGuard], title: 'Ödeme | Aurelia Grand Resort' }
+      { path: 'customer/payment/:reservationId', component: PaymentPage, canActivate: [authGuard], title: 'Ödeme | Aurelia Grand Resort' },
+      { path: 'customer/reservations', component: MyReservations, canActivate: [authGuard], title: 'Rezervasyonlarım | Aurelia Grand Resort' }
     ]
   },
   // Bilinmeyen adresler → ana sayfa

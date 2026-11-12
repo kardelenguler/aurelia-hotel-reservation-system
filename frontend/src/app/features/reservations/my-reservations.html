@@ -1,0 +1,129 @@
+<section class="container section">
+  <div class="page-header">
+    <div>
+      <span class="eyebrow">Hesabım</span>
+      <h1>Rezervasyonlarım</h1>
+    </div>
+    <a routerLink="/" class="btn btn-gold btn-sm">+ Yeni Rezervasyon</a>
+  </div>
+
+  @if (lastCancelled(); as c) {
+    <div class="alert alert-success" role="status">
+      Rezervasyon #{{ c.id }} iptal edildi.
+      @if (c.refund > 0) {
+        {{ c.refund | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }} iade edilecek.
+      }
+    </div>
+  }
+
+  <!-- Filtreler -->
+  <div class="filters" role="tablist">
+    @for (f of filters; track f.key) {
+      <button type="button" role="tab" class="filter"
+              [class.active]="filter() === f.key" [attr.aria-selected]="filter() === f.key"
+              (click)="setFilter(f.key)">
+        {{ f.label }}
+        @if (!loading()) { <span class="count">{{ counts()[f.key] }}</span> }
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    @for (i of [1, 2]; track i) {
+      <div class="card res-card">
+        <div class="skeleton res-image"></div>
+        <div class="res-body">
+          <div class="skeleton" style="height: 20px; width: 40%;"></div>
+          <div class="skeleton" style="height: 14px; width: 70%; margin-top: 14px;"></div>
+        </div>
+      </div>
+    }
+  } @else if (loadError(); as error) {
+    <div class="card state-card">
+      <h3>{{ error }}</h3>
+      <button type="button" class="btn btn-primary" (click)="load()">Tekrar Dene</button>
+    </div>
+  } @else if (filtered().length === 0) {
+    <div class="card state-card">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="state-icon" aria-hidden="true">
+        <rect x="3" y="5" width="18" height="16" rx="2" />
+        <path d="M3 10h18M8 3v4M16 3v4" />
+      </svg>
+      <h3>Bu kategoride rezervasyonunuz yok.</h3>
+      <a routerLink="/" class="btn btn-primary">Oda Ara</a>
+    </div>
+  } @else {
+    <div class="res-list">
+      @for (r of filtered(); track r.id) {
+        <article class="card res-card">
+          <div class="res-image">
+            <img [src]="roomImage(r)" [alt]="r.room.roomType.name" loading="lazy" (error)="hideBrokenImage($event)">
+          </div>
+
+          <div class="res-body">
+            <div class="res-top">
+              <div>
+                <span class="res-no">Rezervasyon #{{ r.id }}</span>
+                <h3>{{ r.room.roomType.name }} · Oda {{ r.room.roomNumber }}</h3>
+              </div>
+              <app-status-badge [status]="r.status" />
+            </div>
+
+            <dl class="res-details">
+              <div><dt>Giriş</dt><dd>{{ r.checkInDate | date: 'd MMM y' }}</dd></div>
+              <div><dt>Çıkış</dt><dd>{{ r.checkOutDate | date: 'd MMM y' }}</dd></div>
+              <div><dt>Süre</dt><dd>{{ nights(r) }} gece</dd></div>
+              <div><dt>Misafir</dt><dd>{{ r.guestCount }} kişi</dd></div>
+            </dl>
+          </div>
+
+          <div class="res-side">
+            <p class="res-total">{{ r.totalPrice | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }}</p>
+            @if (r.status === 'pending') {
+              <a [routerLink]="['/customer/payment', r.id]" class="btn btn-gold btn-sm">Ödeme Yap</a>
+            }
+            @if (canCancel(r)) {
+              <button type="button" class="btn btn-outline btn-sm cancel-btn" (click)="openCancel(r)">İptal Et</button>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>
+
+<!-- İptal onay penceresi -->
+<app-confirm-dialog
+  [open]="!!cancelTarget()"
+  title="Rezervasyonu İptal Et"
+  confirmLabel="Evet, İptal Et"
+  cancelLabel="Vazgeç"
+  [danger]="true"
+  [loading]="cancelling()"
+  [confirmDisabled]="previewLoading() || !preview()?.cancellable"
+  (confirmed)="confirmCancel()"
+  (cancelled)="closeCancel()">
+
+  @if (cancelTarget(); as t) {
+    <p><strong>Rezervasyon #{{ t.id }}</strong> · {{ t.room.roomType.name }}</p>
+  }
+
+  @if (previewLoading()) {
+    <p class="muted">İade tutarı hesaplanıyor...</p>
+  } @else if (preview(); as p) {
+    <p class="muted">{{ p.message }}</p>
+    @if (p.cancellable && p.paidAmount > 0) {
+      <div class="refund-box">
+        <div><span>Ödenen</span><strong>{{ p.paidAmount | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }}</strong></div>
+        <div><span>İade (%{{ p.refundPercent }})</span><strong>{{ p.refundAmount | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }}</strong></div>
+      </div>
+    }
+    @if (p.cancellable) {
+      <p class="warning">Bu işlem geri alınamaz.</p>
+    }
+  }
+
+  @if (cancelError(); as e) {
+    <div class="alert alert-error">{{ e }}</div>
+  }
+</app-confirm-dialog>
