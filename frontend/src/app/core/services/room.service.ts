@@ -13,6 +13,11 @@ export class RoomService {
     return this.http.get<RoomType[]>(`${API_URL}/room-types`);
   }
 
+  // Tek oda (herkese açık)
+  getRoom(id: number): Observable<Room> {
+    return this.http.get<Room>(`${API_URL}/rooms/${id}`);
+  }
+
   // Müsait odalar (herkese açık)
   searchAvailable(checkIn: string, checkOut: string, guests: number): Observable<Room[]> {
     const params = new HttpParams()

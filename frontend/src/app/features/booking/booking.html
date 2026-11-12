@@ -1,0 +1,137 @@
+<section class="container section">
+  <app-booking-steps [current]="2" />
+
+  @if (paramError(); as error) {
+    <div class="card state-card">
+      <h3>{{ error }}</h3>
+      <p>Lütfen oda aramasını yeniden yapın.</p>
+      <a routerLink="/" class="btn btn-primary">Ana Sayfaya Dön</a>
+    </div>
+  } @else if (loading()) {
+    <div class="booking-grid">
+      <div class="card" style="padding: 24px;">
+        <div class="skeleton" style="height: 220px;"></div>
+        <div class="skeleton" style="height: 22px; width: 50%; margin-top: 20px;"></div>
+        <div class="skeleton" style="height: 14px; width: 80%; margin-top: 12px;"></div>
+      </div>
+      <div class="card" style="padding: 24px;">
+        <div class="skeleton" style="height: 120px;"></div>
+      </div>
+    </div>
+  } @else if (loadError(); as error) {
+    <div class="card state-card">
+      <h3>{{ error }}</h3>
+      <button type="button" class="btn btn-primary" (click)="loadRoom()">Tekrar Dene</button>
+    </div>
+  } @else if (room(); as room) {
+    <div class="booking-grid">
+
+      <!-- ===== SOL: Oda ve konaklama bilgileri ===== -->
+      <div class="booking-main">
+        <article class="card room-summary">
+          <div class="room-image">
+            @if (roomImage()) {
+              <img [src]="roomImage()" [alt]="room.roomType.name" (error)="hideBrokenImage($event)">
+            }
+          </div>
+          <div class="room-info">
+            <span class="eyebrow">Seçilen Oda</span>
+            <h2>{{ room.roomType.name }}</h2>
+            <p class="muted">{{ room.roomType.description }}</p>
+            <div class="info-tags">
+              <span class="tag">Oda {{ room.roomNumber }}</span>
+              <span class="tag">{{ room.floor }}. kat</span>
+              <span class="tag">En fazla {{ room.roomType.capacity }} kişi</span>
+            </div>
+          </div>
+        </article>
+
+        <article class="card detail-card">
+          <h3>Konaklama Bilgileri</h3>
+          <dl class="details">
+            <div>
+              <dt>Giriş</dt>
+              <dd>{{ checkIn() | date: 'd MMMM y, EEEE' }} <span>· 14:00'ten itibaren</span></dd>
+            </div>
+            <div>
+              <dt>Çıkış</dt>
+              <dd>{{ checkOut() | date: 'd MMMM y, EEEE' }} <span>· 12:00'ye kadar</span></dd>
+            </div>
+            <div>
+              <dt>Süre</dt>
+              <dd>{{ nights() }} gece</dd>
+            </div>
+            <div>
+              <dt>Misafirler</dt>
+              <dd>
+                {{ adultCount() }} yetişkin
+                @if (childCount() > 0) { , {{ childCount() }} çocuk }
+              </dd>
+            </div>
+          </dl>
+        </article>
+
+        <article class="card detail-card">
+          <h3>İptal Politikası</h3>
+          <ul class="policy">
+            <li><strong>Girişe 7 gün veya daha fazla</strong> varken iptal → ödemenin <strong>tamamı</strong> iade edilir.</li>
+            <li><strong>Girişe 1-6 gün</strong> kala iptal → ödemenin <strong>%50'si</strong> iade edilir.</li>
+            <li><strong>Giriş günü</strong> ve sonrasında iptal yapılamaz.</li>
+          </ul>
+
+          <label class="checkbox">
+            <input type="checkbox" [checked]="termsAccepted()" (change)="toggleTerms($event)">
+            <span>Rezervasyon koşullarını ve iptal politikasını okudum, kabul ediyorum.</span>
+          </label>
+          @if (submitted() && !termsAccepted()) {
+            <span class="form-error">Devam etmek için koşulları onaylamalısınız.</span>
+          }
+        </article>
+      </div>
+
+      <!-- ===== SAĞ: Fiyat özeti ===== -->
+      <aside class="card price-card">
+        <h3>Fiyat Özeti</h3>
+        <div class="price-row">
+          <span>{{ room.roomType.pricePerNight | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }} × {{ nights() }} gece</span>
+          <span>{{ totalPrice() | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }}</span>
+        </div>
+        <div class="price-row muted">
+          <span>Her şey dahil</span>
+          <span>Dahil</span>
+        </div>
+        <div class="price-total">
+          <span>Toplam</span>
+          <span>{{ totalPrice() | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }}</span>
+        </div>
+
+        @if (capacityError(); as error) {
+          <div class="alert alert-error">{{ error }}</div>
+        }
+        @if (submitError(); as error) {
+          <div class="alert alert-error" role="alert">
+            {{ error }}
+            @if (roomTaken()) {
+              <a routerLink="/search" [queryParams]="searchParams()" class="alert-link">Başka oda ara →</a>
+            }
+          </div>
+        }
+
+        <button
+          type="button"
+          class="btn btn-primary btn-block"
+          [disabled]="submitting() || !!capacityError()"
+          (click)="confirm()">
+          @if (submitting()) {
+            <span class="spinner" aria-hidden="true"></span>
+            Rezervasyon oluşturuluyor...
+          } @else {
+            Onayla ve Ödemeye Geç
+          }
+        </button>
+        <p class="note">Ödeme bir sonraki adımda alınacaktır.</p>
+        <a routerLink="/search" [queryParams]="searchParams()" class="back-link">← Oda seçimine dön</a>
+      </aside>
+    </div>
+  }
+</section>

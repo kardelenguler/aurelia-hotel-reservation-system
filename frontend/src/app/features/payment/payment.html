@@ -1,0 +1,148 @@
+<section class="container section">
+  <app-booking-steps [current]="completedPayment() ? 4 : 3" />
+
+  @if (loading()) {
+    <div class="card" style="max-width: 720px; margin-inline: auto; padding: 32px;">
+      <div class="skeleton" style="height: 24px; width: 40%;"></div>
+      <div class="skeleton" style="height: 160px; margin-top: 20px;"></div>
+    </div>
+  } @else if (loadError(); as error) {
+    <div class="card state-card">
+      <h3>{{ error }}</h3>
+      <button type="button" class="btn btn-primary" (click)="loadReservation()">Tekrar Dene</button>
+    </div>
+  } @else if (completedPayment(); as payment) {
+
+    <!-- ===== BAŞARILI ===== -->
+    <div class="card success-card">
+      <div class="success-icon" aria-hidden="true">✓</div>
+      <h2>Rezervasyonunuz Onaylandı</h2>
+      <p class="muted">Aurelia Grand Resort'ta sizi ağırlamayı sabırsızlıkla bekliyoruz.</p>
+
+      <dl class="success-details">
+        <div><dt>Rezervasyon No</dt><dd>#{{ reservation()?.id }}</dd></div>
+        <div><dt>Ödenen Tutar</dt><dd>{{ payment.amount | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }}</dd></div>
+        <div><dt>Ödeme Yöntemi</dt><dd>{{ payment.method === 'card' ? 'Kredi / Banka Kartı' : 'Nakit' }}</dd></div>
+        <div><dt>Giriş</dt><dd>{{ reservation()?.checkInDate | date: 'd MMMM y' }}</dd></div>
+      </dl>
+
+      <div class="success-actions">
+        <a routerLink="/customer/reservations" class="btn btn-primary">Rezervasyonlarım</a>
+        <a routerLink="/" class="btn btn-outline">Ana Sayfa</a>
+      </div>
+    </div>
+
+  } @else if (reservation(); as r) {
+
+    @if (notPayable()) {
+      <!-- ===== ÖDENEMEZ ===== -->
+      <div class="card state-card">
+        <h3>Bu rezervasyon için ödeme yapılamaz.</h3>
+        <p class="muted">Rezervasyon durumu: <strong>{{ statusLabel(r.status) }}</strong></p>
+        <a routerLink="/customer/reservations" class="btn btn-primary">Rezervasyonlarım</a>
+      </div>
+    } @else {
+
+      <div class="payment-grid">
+        <!-- ===== SOL: Ödeme yöntemi ===== -->
+        <div class="card payment-card">
+          <h2>Ödeme</h2>
+          <div class="demo-note">
+            🔒 <strong>Demo ödeme:</strong> Gerçek bir ödeme alınmaz. Kart bilgileri sadece format
+            kontrolü için kullanılır, <strong>hiçbir yere gönderilmez ve saklanmaz.</strong>
+          </div>
+
+          <div class="methods" role="radiogroup" aria-label="Ödeme yöntemi">
+            <button type="button" class="method" role="radio"
+                    [class.selected]="method() === 'card'" [attr.aria-checked]="method() === 'card'"
+                    (click)="selectMethod('card')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <rect x="2.5" y="5" width="19" height="14" rx="2" />
+                <path d="M2.5 10h19M6 15h4" />
+              </svg>
+              Kredi / Banka Kartı
+            </button>
+            <button type="button" class="method" role="radio"
+                    [class.selected]="method() === 'cash'" [attr.aria-checked]="method() === 'cash'"
+                    (click)="selectMethod('cash')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+                <rect x="2.5" y="6" width="19" height="12" rx="2" />
+                <circle cx="12" cy="12" r="2.5" />
+              </svg>
+              Nakit
+            </button>
+          </div>
+
+          @if (method() === 'card') {
+            <form class="card-form" [formGroup]="cardForm" (ngSubmit)="pay()" novalidate autocomplete="off">
+              <div class="form-field">
+                <label class="form-label" for="holder">Kart Sahibi</label>
+                <input id="holder" type="text" class="form-input" formControlName="holder"
+                       placeholder="Ad Soyad" [class.is-invalid]="cardError('holder')">
+                @if (cardError('holder'); as e) { <span class="form-error">{{ e }}</span> }
+              </div>
+
+              <div class="form-field">
+                <label class="form-label" for="number">Kart Numarası</label>
+                <input id="number" type="text" inputmode="numeric" class="form-input" formControlName="number"
+                       placeholder="0000 0000 0000 0000" (input)="formatCardNumber($event)"
+                       [class.is-invalid]="cardError('number')">
+                @if (cardError('number'); as e) { <span class="form-error">{{ e }}</span> }
+              </div>
+
+              <div class="form-row">
+                <div class="form-field">
+                  <label class="form-label" for="expiry">Son Kullanma</label>
+                  <input id="expiry" type="text" inputmode="numeric" class="form-input" formControlName="expiry"
+                         placeholder="AA/YY" (input)="formatExpiry($event)" [class.is-invalid]="cardError('expiry')">
+                  @if (cardError('expiry'); as e) { <span class="form-error">{{ e }}</span> }
+                </div>
+                <div class="form-field">
+                  <label class="form-label" for="cvv">CVV</label>
+                  <input id="cvv" type="password" inputmode="numeric" class="form-input" formControlName="cvv"
+                         placeholder="•••" (input)="onlyDigits($event, 3)" [class.is-invalid]="cardError('cvv')">
+                  @if (cardError('cvv'); as e) { <span class="form-error">{{ e }}</span> }
+                </div>
+              </div>
+            </form>
+          } @else {
+            <div class="cash-info">
+              <p><strong>Nakit ödeme (demo):</strong> Bu seçenekte ödemenin otel resepsiyonunda
+                alındığı kabul edilir ve rezervasyonunuz hemen onaylanır.</p>
+            </div>
+          }
+        </div>
+
+        <!-- ===== SAĞ: Rezervasyon özeti ===== -->
+        <aside class="card summary-card">
+          <h3>Rezervasyon Özeti</h3>
+          <p class="summary-room">{{ r.room.roomType.name }} · Oda {{ r.room.roomNumber }}</p>
+          <dl class="summary-list">
+            <div><dt>Rezervasyon No</dt><dd>#{{ r.id }}</dd></div>
+            <div><dt>Giriş</dt><dd>{{ r.checkInDate | date: 'd MMM y' }}</dd></div>
+            <div><dt>Çıkış</dt><dd>{{ r.checkOutDate | date: 'd MMM y' }}</dd></div>
+            <div><dt>Süre</dt><dd>{{ nights() }} gece</dd></div>
+            <div><dt>Misafir</dt><dd>{{ r.guestCount }} kişi</dd></div>
+          </dl>
+          <div class="summary-total">
+            <span>Toplam</span>
+            <span>{{ r.totalPrice | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }}</span>
+          </div>
+
+          @if (submitError(); as error) {
+            <div class="alert alert-error" role="alert">{{ error }}</div>
+          }
+
+          <button type="button" class="btn btn-gold btn-block" [disabled]="submitting()" (click)="pay()">
+            @if (submitting()) {
+              <span class="spinner" aria-hidden="true"></span>
+              İşleniyor...
+            } @else {
+              {{ r.totalPrice | currency: 'TRY' : 'symbol-narrow' : '1.0-0' }} Öde
+            }
+          </button>
+        </aside>
+      </div>
+    }
+  }
+</section>
